@@ -74,15 +74,16 @@ class RivlyButton extends StatelessWidget {
       );
     }
 
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        if (icon != null) ...[
+    if (icon != null) {
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
           Icon(icon, size: 18),
           const SizedBox(width: 8),
+          Flexible(child: Text(label, overflow: TextOverflow.ellipsis)),
         ],
-        Text(label),
-      ],
-    );
+      );
+    }
+    return Text(label);
   }
 }
