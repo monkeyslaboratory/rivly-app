@@ -22,8 +22,9 @@ class AuthRepository {
     );
 
     final data = response.data as Map<String, dynamic>;
-    await _storage.setAccessToken(data['access'] as String);
-    await _storage.setRefreshToken(data['refresh'] as String);
+    final tokens = data['tokens'] as Map<String, dynamic>;
+    await _storage.setAccessToken(tokens['access'] as String);
+    await _storage.setRefreshToken(tokens['refresh'] as String);
 
     return UserModel.fromJson(data['user'] as Map<String, dynamic>);
   }
@@ -41,8 +42,9 @@ class AuthRepository {
     );
 
     final data = response.data as Map<String, dynamic>;
-    await _storage.setAccessToken(data['access'] as String);
-    await _storage.setRefreshToken(data['refresh'] as String);
+    final tokens = data['tokens'] as Map<String, dynamic>;
+    await _storage.setAccessToken(tokens['access'] as String);
+    await _storage.setRefreshToken(tokens['refresh'] as String);
 
     return UserModel.fromJson(data['user'] as Map<String, dynamic>);
   }
