@@ -67,15 +67,43 @@ class _LoginScreenState extends State<LoginScreen> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        Text(
-                          'Rivly',
-                          style: Theme.of(context)
-                              .textTheme
-                              .displayLarge
-                              ?.copyWith(
-                                fontWeight: FontWeight.w800,
+                        // Decorative gradient circle behind logo
+                        SizedBox(
+                          height: 120,
+                          child: Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              Positioned(
+                                child: Container(
+                                  width: 160,
+                                  height: 160,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    gradient: RadialGradient(
+                                      colors: [
+                                        AppColors.accentPrimary
+                                            .withValues(alpha: 0.12),
+                                        AppColors.accentSecondary
+                                            .withValues(alpha: 0.06),
+                                        Colors.transparent,
+                                      ],
+                                      stops: const [0.0, 0.5, 1.0],
+                                    ),
+                                  ),
+                                ),
                               ),
-                          textAlign: TextAlign.center,
+                              Text(
+                                'Rivly',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .displayLarge
+                                    ?.copyWith(
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ],
+                          ),
                         ),
                         const SizedBox(height: 12),
                         Text(

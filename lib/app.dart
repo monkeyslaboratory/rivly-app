@@ -10,7 +10,6 @@ import 'logic/theme/theme_state.dart';
 import 'presentation/screens/auth/login_screen.dart';
 import 'presentation/screens/auth/register_screen.dart';
 import 'presentation/screens/dashboard/dashboard_screen.dart';
-import 'presentation/screens/job_creation/stepper_screen.dart';
 import 'presentation/screens/run_progress/run_progress_screen.dart';
 import 'presentation/screens/reports/report_detail_screen.dart';
 
@@ -64,10 +63,6 @@ class _RivlyAppState extends State<RivlyApp> {
         GoRoute(
           path: '/dashboard',
           builder: (context, state) => const DashboardScreen(),
-        ),
-        GoRoute(
-          path: '/jobs/new',
-          builder: (context, state) => const StepperScreen(),
         ),
         GoRoute(
           path: '/runs/:id',

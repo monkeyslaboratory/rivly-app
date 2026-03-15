@@ -70,25 +70,15 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
 
   Widget _buildBody(BuildContext context) {
     if (_isLoading) {
-      return LoadingShimmer.list(count: 5, itemHeight: 100);
+      return _buildLoadingState(context);
     }
 
     if (_error != null) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.error_outline, size: 48, color: AppColors.error),
-            const SizedBox(height: 16),
-            Text(_error!, style: Theme.of(context).textTheme.bodyLarge),
-            const SizedBox(height: 16),
-            TextButton(
-              onPressed: _loadReport,
-              child: const Text('Retry'),
-            ),
-          ],
-        ),
-      );
+      return _buildErrorState(context);
+    }
+
+    if (_report == null) {
+      return _buildEmptyState(context);
     }
 
     final report = _report!;
@@ -258,6 +248,190 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
             }),
           ],
         ],
+      ),
+    );
+  }
+
+  Widget _buildLoadingState(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        children: [
+          const SizedBox(height: 20),
+          // Score gauge placeholder
+          Center(
+            child: Container(
+              width: 160,
+              height: 160,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: isDark
+                    ? AppColors.darkBgSubtle
+                    : AppColors.lightBgSubtle,
+              ),
+              child: Center(
+                child: SizedBox(
+                  width: 40,
+                  height: 40,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 3,
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      AppColors.accentPrimary.withValues(alpha: 0.5),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 32),
+          // Shimmer cards
+          LoadingShimmer.list(count: 3, itemHeight: 100),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildErrorState(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Container(
+          constraints: const BoxConstraints(maxWidth: 400),
+          padding: const EdgeInsets.all(28),
+          decoration: BoxDecoration(
+            color: isDark ? AppColors.darkBgElevated : Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: AppColors.error.withValues(alpha: 0.2),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.error.withValues(alpha: 0.05),
+                blurRadius: 20,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 56,
+                height: 56,
+                decoration: BoxDecoration(
+                  color: AppColors.error.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.error_outline,
+                  size: 28,
+                  color: AppColors.error,
+                ),
+              ),
+              const SizedBox(height: 20),
+              Text(
+                'Failed to load report',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                _error ?? 'An unexpected error occurred',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: isDark
+                          ? AppColors.darkTextSecondary
+                          : AppColors.lightTextSecondary,
+                    ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                height: 44,
+                child: OutlinedButton.icon(
+                  onPressed: _loadReport,
+                  icon: const Icon(Icons.refresh, size: 18),
+                  label: const Text('Try Again'),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyState(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            SizedBox(
+              width: 140,
+              height: 140,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  Container(
+                    width: 120,
+                    height: 120,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: RadialGradient(
+                        colors: [
+                          AppColors.accentSecondary.withValues(alpha: 0.1),
+                          Colors.transparent,
+                        ],
+                      ),
+                    ),
+                  ),
+                  Icon(
+                    Icons.assessment_outlined,
+                    size: 44,
+                    color: AppColors.accentSecondary.withValues(alpha: 0.6),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              'Report not found',
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'This report may have been removed\nor is still processing',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: isDark
+                        ? AppColors.darkTextSecondary
+                        : AppColors.lightTextSecondary,
+                    height: 1.5,
+                  ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 28),
+            SizedBox(
+              width: 200,
+              height: 44,
+              child: ElevatedButton.icon(
+                onPressed: () => context.go('/dashboard'),
+                icon: const Icon(Icons.arrow_back, size: 18),
+                label: const Text('Back to Dashboard'),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

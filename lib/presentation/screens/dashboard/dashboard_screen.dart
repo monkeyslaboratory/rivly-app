@@ -10,6 +10,7 @@ import '../../../logic/theme/theme_cubit.dart';
 import '../../../logic/theme/theme_state.dart';
 import '../../widgets/common/loading_shimmer.dart';
 import '../../widgets/common/rivly_card.dart';
+import '../../widgets/job_creation_modal.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -23,6 +24,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
   void initState() {
     super.initState();
     context.read<DashboardCubit>().loadDashboard();
+  }
+
+  void _openCreateModal() {
+    JobCreationModal.show(
+      context,
+      onJobCreated: () {
+        context.read<DashboardCubit>().loadDashboard();
+      },
+    );
   }
 
   @override
@@ -66,55 +76,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
           }
 
           if (state.error != null && state.jobs.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.error_outline,
-                    size: 48,
-                    color: AppColors.error,
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    state.error!,
-                    style: Theme.of(context).textTheme.bodyLarge,
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 16),
-                  TextButton(
-                    onPressed: () =>
-                        context.read<DashboardCubit>().loadDashboard(),
-                    child: const Text('Retry'),
-                  ),
-                ],
-              ),
-            );
+            return _buildErrorState(context, state.error!);
           }
 
           if (state.jobs.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.work_outline,
-                    size: 64,
-                    color: Theme.of(context).textTheme.bodySmall?.color,
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'No jobs yet',
-                    style: Theme.of(context).textTheme.headlineSmall,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Create your first competitive analysis job',
-                    style: Theme.of(context).textTheme.bodyMedium,
-                  ),
-                ],
-              ),
-            );
+            return _buildEmptyState(context);
           }
 
           return RefreshIndicator(
@@ -276,9 +242,213 @@ class _DashboardScreenState extends State<DashboardScreen> {
         },
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => context.go('/jobs/new'),
+        onPressed: _openCreateModal,
         icon: const Icon(Icons.add),
         label: const Text('New Job'),
+      ),
+    );
+  }
+
+  Widget _buildEmptyState(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Center(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // Decorative icon composition with gradient circle
+            SizedBox(
+              width: 180,
+              height: 180,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  // Gradient circle background
+                  Container(
+                    width: 160,
+                    height: 160,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: RadialGradient(
+                        colors: [
+                          AppColors.accentPrimary.withValues(alpha: 0.12),
+                          AppColors.accentSecondary.withValues(alpha: 0.06),
+                          Colors.transparent,
+                        ],
+                        stops: const [0.0, 0.6, 1.0],
+                      ),
+                    ),
+                  ),
+                  // Second decorative ring
+                  Container(
+                    width: 120,
+                    height: 120,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: AppColors.accentSecondary.withValues(alpha: 0.1),
+                        width: 1.5,
+                      ),
+                    ),
+                  ),
+                  // Icon composition
+                  Icon(
+                    Icons.insights,
+                    size: 48,
+                    color: AppColors.accentPrimary.withValues(alpha: 0.8),
+                  ),
+                  Positioned(
+                    top: 30,
+                    right: 28,
+                    child: Icon(
+                      Icons.auto_graph,
+                      size: 24,
+                      color:
+                          AppColors.accentSecondary.withValues(alpha: 0.6),
+                    ),
+                  ),
+                  Positioned(
+                    bottom: 35,
+                    left: 28,
+                    child: Icon(
+                      Icons.radar,
+                      size: 22,
+                      color: AppColors.accentPrimary.withValues(alpha: 0.5),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 32),
+
+            // Heading
+            Text(
+              'No analyses yet',
+              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.5,
+                  ),
+            ),
+            const SizedBox(height: 12),
+
+            // Subtext
+            Text(
+              'Set up your first competitor analysis\nin under 2 minutes',
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                    color: isDark
+                        ? AppColors.darkTextSecondary
+                        : AppColors.lightTextSecondary,
+                    height: 1.5,
+                  ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 32),
+
+            // CTA button
+            SizedBox(
+              width: 260,
+              height: 52,
+              child: ElevatedButton(
+                onPressed: _openCreateModal,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text('Create First Analysis'),
+                    const SizedBox(width: 8),
+                    const Icon(Icons.arrow_forward, size: 18),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            // Plan info
+            Text(
+              'Free plan includes 1 job with 2 competitors',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: isDark
+                        ? AppColors.darkTextMuted
+                        : AppColors.lightTextMuted,
+                  ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildErrorState(BuildContext context, String error) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Container(
+          constraints: const BoxConstraints(maxWidth: 400),
+          padding: const EdgeInsets.all(28),
+          decoration: BoxDecoration(
+            color: isDark ? AppColors.darkBgElevated : Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: AppColors.error.withValues(alpha: 0.2),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.error.withValues(alpha: 0.05),
+                blurRadius: 20,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 56,
+                height: 56,
+                decoration: BoxDecoration(
+                  color: AppColors.error.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.error_outline,
+                  size: 28,
+                  color: AppColors.error,
+                ),
+              ),
+              const SizedBox(height: 20),
+              Text(
+                'Something went wrong',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                error,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: isDark
+                          ? AppColors.darkTextSecondary
+                          : AppColors.lightTextSecondary,
+                    ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                height: 44,
+                child: OutlinedButton.icon(
+                  onPressed: () =>
+                      context.read<DashboardCubit>().loadDashboard(),
+                  icon: const Icon(Icons.refresh, size: 18),
+                  label: const Text('Try Again'),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
