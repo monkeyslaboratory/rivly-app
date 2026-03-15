@@ -96,9 +96,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 const SizedBox(height: 12),
                 ...state.jobs.map((job) => RivlyCard(
                       onTap: () {
-                        if (job.lastRunId != null) {
-                          context.go('/reports/${job.lastRunId}');
-                        }
+                        context.go('/jobs/${job.id}');
                       },
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -154,7 +152,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               ),
                               const SizedBox(width: 4),
                               Text(
-                                job.schedule,
+                                job.scheduleFrequency,
                                 style: Theme.of(context).textTheme.bodySmall,
                               ),
                               const Spacer(),

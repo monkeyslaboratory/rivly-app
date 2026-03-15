@@ -8,8 +8,17 @@ class JobRepository {
 
   Future<List<JobModel>> getJobs() async {
     final response = await _client.get(ApiConstants.jobs);
-    final data = response.data as List<dynamic>;
-    return data
+    final data = response.data;
+    // Handle both paginated and list responses
+    final List<dynamic> results;
+    if (data is Map<String, dynamic> && data.containsKey('results')) {
+      results = data['results'] as List<dynamic>;
+    } else if (data is List<dynamic>) {
+      results = data;
+    } else {
+      results = [];
+    }
+    return results
         .map((e) => JobModel.fromJson(e as Map<String, dynamic>))
         .toList();
   }
@@ -23,29 +32,26 @@ class JobRepository {
   Future<JobModel> createJob({
     required String name,
     required String productUrl,
-    String? productDescription,
-    String? productCategory,
-    String schedule = 'manual',
-    List<Map<String, dynamic>>? competitors,
-    List<String>? analysisAreas,
-    Map<String, dynamic>? config,
+    List<String> areas = const [],
+    String deviceType = 'desktop',
+    String scheduleFrequency = 'weekly',
   }) async {
-    final body = <String, dynamic>{
+    final response = await _client.post(ApiConstants.jobs, data: {
       'name': name,
       'product_url': productUrl,
-      'schedule': schedule,
-    };
-    if (productDescription != null) {
-      body['product_description'] = productDescription;
-    }
-    if (productCategory != null) body['product_category'] = productCategory;
-    if (competitors != null) body['competitors'] = competitors;
-    if (analysisAreas != null) body['analysis_areas'] = analysisAreas;
-    if (config != null) body['config'] = config;
-
-    final response = await _client.post(ApiConstants.jobs, data: body);
+      'areas': areas,
+      'device_type': deviceType,
+      'schedule_frequency': scheduleFrequency,
+    });
     final data = response.data as Map<String, dynamic>;
     return JobModel.fromJson(data);
+  }
+
+  Future<void> addCompetitor(String jobId, String name, String url) async {
+    await _client.post('${ApiConstants.jobDetail(jobId)}competitors/', data: {
+      'name': name,
+      'url': url,
+    });
   }
 
   Future<JobModel> updateJob(String id, Map<String, dynamic> updates) async {

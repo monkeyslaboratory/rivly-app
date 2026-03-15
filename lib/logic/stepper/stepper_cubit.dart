@@ -170,13 +170,21 @@ class StepperCubit extends Cubit<StepperState> {
       final job = await _jobRepository.createJob(
         name: state.jobName,
         productUrl: state.productUrl,
-        productDescription: state.productDescription,
-        productCategory: state.productCategory,
-        schedule: state.schedule,
-        competitors:
-            state.selectedCompetitors.map((c) => c.toJson()).toList(),
-        analysisAreas: state.selectedAreas,
+        areas: state.selectedAreas,
+        scheduleFrequency: state.schedule,
       );
+      // Add competitors individually
+      for (final competitor in state.selectedCompetitors) {
+        try {
+          await _jobRepository.addCompetitor(
+            job.id,
+            competitor.name,
+            competitor.url,
+          );
+        } catch (_) {
+          // Continue adding remaining competitors
+        }
+      }
       emit(state.copyWith(isLoading: false));
       return job.id;
     } on ApiException catch (e) {

@@ -66,12 +66,7 @@ class _Step2CompetitorsState extends State<Step2Competitors> {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      secondary: competitor.description != null
-                          ? Tooltip(
-                              message: competitor.description!,
-                              child: const Icon(Icons.info_outline, size: 20),
-                            )
-                          : null,
+                      secondary: null,
                       activeColor: AppColors.accentPrimary,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10),
@@ -140,7 +135,7 @@ class _Step2CompetitorsState extends State<Step2Competitors> {
                   id: DateTime.now().millisecondsSinceEpoch.toString(),
                   name: nameController.text,
                   url: urlController.text,
-                  source: 'manual',
+                  accessStatus: 'public',
                 );
                 context.read<StepperCubit>().addManualCompetitor(competitor);
                 Navigator.pop(ctx);

@@ -25,12 +25,14 @@ class _JobCreationModalState extends State<JobCreationModal> {
   final _productUrlController = TextEditingController();
   final _jobNameController = TextEditingController();
   final _competitorsController = TextEditingController();
+  final _customTagController = TextEditingController();
   final JobRepository _jobRepository = JobRepository();
 
   bool _isSubmitting = false;
   String? _errorMessage;
+  bool _autoFindCompetitors = true;
 
-  final Map<String, bool> _analysisAreas = {
+  final Map<String, bool> _presetAreas = {
     'Homepage': true,
     'Pricing': true,
     'Navigation': true,
@@ -38,11 +40,14 @@ class _JobCreationModalState extends State<JobCreationModal> {
     'Mobile UX': false,
   };
 
+  final List<String> _customTags = [];
+
   @override
   void dispose() {
     _productUrlController.dispose();
     _jobNameController.dispose();
     _competitorsController.dispose();
+    _customTagController.dispose();
     super.dispose();
   }
 
@@ -53,6 +58,41 @@ class _JobCreationModalState extends State<JobCreationModal> {
       return '$host vs Competitors';
     } catch (_) {
       return 'My Analysis';
+    }
+  }
+
+  void _addCustomTag() {
+    final tag = _customTagController.text.trim();
+    if (tag.isNotEmpty && !_customTags.contains(tag)) {
+      setState(() {
+        _customTags.add(tag);
+        _customTagController.clear();
+      });
+    }
+  }
+
+  void _removeCustomTag(String tag) {
+    setState(() {
+      _customTags.remove(tag);
+    });
+  }
+
+  List<String> _getSelectedAreas() {
+    final selected = _presetAreas.entries
+        .where((e) => e.value)
+        .map((e) => e.key.toLowerCase().replaceAll(' ', '_'))
+        .toList();
+    selected.addAll(
+        _customTags.map((t) => t.toLowerCase().replaceAll(' ', '_')));
+    return selected;
+  }
+
+  String _extractDomain(String url) {
+    try {
+      final uri = Uri.parse(url.startsWith('http') ? url : 'https://$url');
+      return uri.host.replaceFirst('www.', '');
+    } catch (_) {
+      return url;
     }
   }
 
@@ -69,31 +109,36 @@ class _JobCreationModalState extends State<JobCreationModal> {
         ? _jobNameController.text.trim()
         : _generateJobName(productUrl);
 
-    final competitorLines = _competitorsController.text
-        .split('\n')
-        .map((l) => l.trim())
-        .where((l) => l.isNotEmpty)
-        .toList();
-
-    final selectedAreas = _analysisAreas.entries
-        .where((e) => e.value)
-        .map((e) => e.key.toLowerCase().replaceAll(' ', '_'))
-        .toList();
-
-    final competitors = competitorLines
-        .map((url) => {
-              'name': _extractDomain(url),
-              'url': url,
-            })
-        .toList();
+    final selectedAreas = _getSelectedAreas();
 
     try {
+      // Create the job (backend auto-assigns team)
       final job = await _jobRepository.createJob(
         name: jobName,
         productUrl: productUrl,
-        competitors: competitors,
-        analysisAreas: selectedAreas,
+        areas: selectedAreas,
       );
+
+      // Add competitors manually if auto-find is OFF
+      if (!_autoFindCompetitors) {
+        final competitorLines = _competitorsController.text
+            .split('\n')
+            .map((l) => l.trim())
+            .where((l) => l.isNotEmpty)
+            .toList();
+
+        for (final url in competitorLines) {
+          try {
+            await _jobRepository.addCompetitor(
+              job.id,
+              _extractDomain(url),
+              url.startsWith('http') ? url : 'https://$url',
+            );
+          } catch (_) {
+            // Continue adding remaining competitors
+          }
+        }
+      }
 
       // Trigger the run
       try {
@@ -121,15 +166,6 @@ class _JobCreationModalState extends State<JobCreationModal> {
         _isSubmitting = false;
         _errorMessage = e.toString().replaceFirst('Exception: ', '');
       });
-    }
-  }
-
-  String _extractDomain(String url) {
-    try {
-      final uri = Uri.parse(url.startsWith('http') ? url : 'https://$url');
-      return uri.host.replaceFirst('www.', '');
-    } catch (_) {
-      return url;
     }
   }
 
@@ -216,7 +252,7 @@ class _JobCreationModalState extends State<JobCreationModal> {
                   const SizedBox(height: 28),
 
                   // Product URL
-                  _FieldLabel(label: "What's your product URL?"),
+                  const _FieldLabel(label: "What's your product URL?"),
                   const SizedBox(height: 8),
                   TextFormField(
                     controller: _productUrlController,
@@ -235,7 +271,7 @@ class _JobCreationModalState extends State<JobCreationModal> {
                   const SizedBox(height: 20),
 
                   // Job Name
-                  _FieldLabel(label: 'Job Name'),
+                  const _FieldLabel(label: 'Job Name'),
                   const SizedBox(height: 8),
                   TextFormField(
                     controller: _jobNameController,
@@ -245,20 +281,71 @@ class _JobCreationModalState extends State<JobCreationModal> {
                   ),
                   const SizedBox(height: 20),
 
-                  // Competitors
-                  _FieldLabel(label: 'Competitors (one URL per line)'),
+                  // Auto-find competitors toggle
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const _FieldLabel(label: 'Competitors'),
+                            const SizedBox(height: 2),
+                            Text(
+                              _autoFindCompetitors
+                                  ? 'AI will discover competitors after analysis'
+                                  : 'Enter competitor URLs manually',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodySmall
+                                  ?.copyWith(
+                                    color: isDark
+                                        ? AppColors.darkTextMuted
+                                        : AppColors.lightTextMuted,
+                                  ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Column(
+                        children: [
+                          Text(
+                            'Auto-find',
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodySmall
+                                ?.copyWith(fontWeight: FontWeight.w500),
+                          ),
+                          Switch(
+                            value: _autoFindCompetitors,
+                            onChanged: (value) {
+                              setState(() {
+                                _autoFindCompetitors = value;
+                              });
+                            },
+                            activeTrackColor: AppColors.accentPrimary,
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                   const SizedBox(height: 8),
+
+                  // Competitors text field (disabled when auto-find is ON)
                   TextFormField(
                     controller: _competitorsController,
-                    decoration: const InputDecoration(
-                      hintText:
-                          'https://competitor1.com\nhttps://competitor2.com',
+                    enabled: !_autoFindCompetitors,
+                    decoration: InputDecoration(
+                      hintText: _autoFindCompetitors
+                          ? 'AI will discover competitors after analysis'
+                          : 'https://competitor1.com\nhttps://competitor2.com',
                     ),
                     maxLines: 4,
                     minLines: 3,
                     validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return 'Add at least one competitor URL';
+                      if (!_autoFindCompetitors &&
+                          (value == null || value.trim().isEmpty)) {
+                        return 'Add at least one competitor URL or enable auto-find';
                       }
                       return null;
                     },
@@ -266,7 +353,7 @@ class _JobCreationModalState extends State<JobCreationModal> {
                   const SizedBox(height: 20),
 
                   // Analysis Areas
-                  _FieldLabel(label: 'Analysis Areas'),
+                  const _FieldLabel(label: 'Analysis Areas'),
                   const SizedBox(height: 10),
                   Container(
                     width: double.infinity,
@@ -278,51 +365,125 @@ class _JobCreationModalState extends State<JobCreationModal> {
                           ? Colors.white.withValues(alpha: 0.02)
                           : Colors.black.withValues(alpha: 0.02),
                     ),
-                    child: Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: _analysisAreas.entries.map((entry) {
-                        final isSelected = entry.value;
-                        return FilterChip(
-                          label: Text(
-                            entry.key,
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w500,
-                              color: isSelected
-                                  ? (isDark ? Colors.white : Colors.white)
-                                  : (isDark
-                                      ? AppColors.darkTextSecondary
-                                      : AppColors.lightTextSecondary),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Preset + custom tags
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: [
+                            // Preset area chips
+                            ..._presetAreas.entries.map((entry) {
+                              final isSelected = entry.value;
+                              return FilterChip(
+                                label: Text(
+                                  entry.key,
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w500,
+                                    color: isSelected
+                                        ? Colors.white
+                                        : (isDark
+                                            ? AppColors.darkTextSecondary
+                                            : AppColors.lightTextSecondary),
+                                  ),
+                                ),
+                                selected: isSelected,
+                                onSelected: (selected) {
+                                  setState(() {
+                                    _presetAreas[entry.key] = selected;
+                                  });
+                                },
+                                selectedColor: AppColors.accentSecondary,
+                                backgroundColor: isDark
+                                    ? AppColors.darkBgSubtle
+                                    : AppColors.lightBgSubtle,
+                                checkmarkColor: Colors.white,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                  side: BorderSide(
+                                    color: isSelected
+                                        ? AppColors.accentSecondary
+                                        : borderColor,
+                                  ),
+                                ),
+                                showCheckmark: true,
+                                materialTapTargetSize:
+                                    MaterialTapTargetSize.shrinkWrap,
+                                visualDensity: VisualDensity.compact,
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 4, vertical: 2),
+                              );
+                            }),
+                            // Custom tag chips
+                            ..._customTags.map((tag) {
+                              return Chip(
+                                label: Text(
+                                  tag,
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w500,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                                backgroundColor: AppColors.accentSecondary,
+                                deleteIconColor: Colors.white70,
+                                onDeleted: () => _removeCustomTag(tag),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                  side: const BorderSide(
+                                    color: AppColors.accentSecondary,
+                                  ),
+                                ),
+                                materialTapTargetSize:
+                                    MaterialTapTargetSize.shrinkWrap,
+                                visualDensity: VisualDensity.compact,
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 4, vertical: 2),
+                              );
+                            }),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                        // Custom tag input
+                        Row(
+                          children: [
+                            Expanded(
+                              child: TextField(
+                                controller: _customTagController,
+                                decoration: InputDecoration(
+                                  hintText: 'Add custom area...',
+                                  isDense: true,
+                                  contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 12, vertical: 10),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                    borderSide: BorderSide(color: borderColor),
+                                  ),
+                                ),
+                                style: const TextStyle(fontSize: 13),
+                                onSubmitted: (_) => _addCustomTag(),
+                              ),
                             ),
-                          ),
-                          selected: isSelected,
-                          onSelected: (selected) {
-                            setState(() {
-                              _analysisAreas[entry.key] = selected;
-                            });
-                          },
-                          selectedColor: AppColors.accentSecondary,
-                          backgroundColor: isDark
-                              ? AppColors.darkBgSubtle
-                              : AppColors.lightBgSubtle,
-                          checkmarkColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            side: BorderSide(
-                              color: isSelected
-                                  ? AppColors.accentSecondary
-                                  : borderColor,
+                            const SizedBox(width: 8),
+                            SizedBox(
+                              height: 36,
+                              child: TextButton(
+                                onPressed: _addCustomTag,
+                                style: TextButton.styleFrom(
+                                  padding:
+                                      const EdgeInsets.symmetric(horizontal: 12),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                ),
+                                child: const Text('Add'),
+                              ),
                             ),
-                          ),
-                          showCheckmark: true,
-                          materialTapTargetSize:
-                              MaterialTapTargetSize.shrinkWrap,
-                          visualDensity: VisualDensity.compact,
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 4, vertical: 2),
-                        );
-                      }).toList(),
+                          ],
+                        ),
+                      ],
                     ),
                   ),
                   const SizedBox(height: 24),
@@ -376,13 +537,12 @@ class _JobCreationModalState extends State<JobCreationModal> {
                                 ),
                               ),
                             )
-                          : Row(
+                          : const Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                const Icon(Icons.rocket_launch_outlined,
-                                    size: 18),
-                                const SizedBox(width: 8),
-                                const Text('Create & Run Analysis'),
+                                Icon(Icons.rocket_launch_outlined, size: 18),
+                                SizedBox(width: 8),
+                                Text('Create & Run Analysis'),
                               ],
                             ),
                     ),
