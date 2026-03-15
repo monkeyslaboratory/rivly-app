@@ -32,7 +32,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
         title: Text(
           'Rivly',
           style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                color: AppColors.accentPrimary,
                 fontWeight: FontWeight.w800,
               ),
         ),
@@ -203,7 +202,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           Row(
                             children: [
                               Expanded(
-                                child: OutlinedButton.icon(
+                                child: ElevatedButton.icon(
                                   onPressed: () => context
                                       .read<DashboardCubit>()
                                       .triggerRun(job.id),
@@ -212,12 +211,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 ),
                               ),
                               const SizedBox(width: 8),
-                              IconButton(
-                                icon: const Icon(Icons.delete_outline,
-                                    size: 20),
+                              TextButton(
                                 onPressed: () => _confirmDelete(
                                     context, job.id, job.name),
-                                tooltip: 'Delete job',
+                                child: const Icon(Icons.delete_outline,
+                                    size: 20),
                               ),
                             ],
                           ),

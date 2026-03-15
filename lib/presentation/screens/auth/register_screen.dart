@@ -76,23 +76,22 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               .textTheme
                               .displayLarge
                               ?.copyWith(
-                                color: AppColors.accentPrimary,
                                 fontWeight: FontWeight.w800,
                               ),
                           textAlign: TextAlign.center,
                         ),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: 12),
                         Text(
                           'Create your account',
                           style: Theme.of(context).textTheme.bodyMedium,
                           textAlign: TextAlign.center,
                         ),
-                        const SizedBox(height: 48),
+                        const SizedBox(height: 56),
                         Text(
                           'Sign up',
                           style: Theme.of(context).textTheme.headlineMedium,
                         ),
-                        const SizedBox(height: 24),
+                        const SizedBox(height: 28),
                         TextFormField(
                           controller: _emailController,
                           validator: Validators.email,

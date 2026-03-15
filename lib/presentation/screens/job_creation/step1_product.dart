@@ -77,7 +77,7 @@ class _Step1ProductState extends State<Step1Product> {
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     color: AppColors.success.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(16),
                     border: Border.all(
                       color: AppColors.success.withValues(alpha: 0.3),
                     ),
