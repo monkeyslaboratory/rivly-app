@@ -99,6 +99,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
     final duration = data['duration_seconds'] as int?;
     final reports = (data['reports'] as List<dynamic>?) ?? [];
     final overallScores = (data['overall_scores'] as List<dynamic>?) ?? [];
+    final screenshots = (data['screenshots'] as List<dynamic>?) ?? [];
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
@@ -157,6 +158,85 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
             Text('Competitor Scores', style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 12),
             ...overallScores.map((os) => _buildOverallScoreCard(os as Map<String, dynamic>, isDark)),
+            const SizedBox(height: 24),
+          ],
+
+          // Screenshots
+          if (screenshots.isNotEmpty) ...[
+            Text('Screenshots', style: Theme.of(context).textTheme.titleLarge),
+            const SizedBox(height: 12),
+            SizedBox(
+              height: 200,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: screenshots.length,
+                separatorBuilder: (_, __) => const SizedBox(width: 12),
+                itemBuilder: (context, index) {
+                  final shot = screenshots[index] as Map<String, dynamic>;
+                  final shotId = shot['id'] as String;
+                  final pageName = shot['page_name'] as String? ?? '';
+                  final deviceType = shot['device_type'] as String? ?? '';
+                  final shotStatus = shot['status'] as String? ?? '';
+                  final imageUrl = 'http://localhost:8000/api/v1/runs/screenshots/$shotId/';
+
+                  return Container(
+                    width: 300,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: isDark ? Colors.white.withValues(alpha: 0.06) : Colors.black.withValues(alpha: 0.06)),
+                      color: isDark ? AppColors.darkBgSecondary : AppColors.lightBgSecondary,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: ClipRRect(
+                            borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+                            child: shotStatus == 'success'
+                                ? Image.network(
+                                    imageUrl,
+                                    fit: BoxFit.cover,
+                                    width: double.infinity,
+                                    errorBuilder: (_, __, ___) => Center(
+                                      child: Icon(Icons.broken_image, color: isDark ? AppColors.darkTextMuted : AppColors.lightTextMuted),
+                                    ),
+                                  )
+                                : Center(
+                                    child: Column(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        Icon(Icons.error_outline, color: AppColors.error, size: 24),
+                                        const SizedBox(height: 4),
+                                        Text(shotStatus, style: TextStyle(fontSize: 11, color: AppColors.error)),
+                                      ],
+                                    ),
+                                  ),
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.all(8),
+                          child: Row(
+                            children: [
+                              Icon(
+                                deviceType == 'mobile' ? Icons.phone_iphone : Icons.desktop_windows_outlined,
+                                size: 14,
+                                color: isDark ? AppColors.darkTextMuted : AppColors.lightTextMuted,
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                pageName.replaceAll('_', ' '),
+                                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500,
+                                    color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ),
             const SizedBox(height: 24),
           ],
 
