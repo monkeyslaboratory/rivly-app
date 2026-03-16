@@ -3,18 +3,17 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'theme_state.dart';
 
 class ThemeCubit extends Cubit<ThemeState> {
-  ThemeCubit() : super(const ThemeState(themeMode: ThemeMode.dark));
+  ThemeCubit() : super(const ThemeState());
 
   void toggleTheme() {
-    emit(
-      state.copyWith(
-        themeMode:
-            state.isDark ? ThemeMode.light : ThemeMode.dark,
-      ),
-    );
+    emit(state.copyWith(isDark: !state.isDark));
   }
 
   void setThemeMode(ThemeMode mode) {
-    emit(state.copyWith(themeMode: mode));
+    emit(state.copyWith(isDark: mode == ThemeMode.dark));
+  }
+
+  void setLocale(Locale locale) {
+    emit(state.copyWith(locale: locale));
   }
 }
