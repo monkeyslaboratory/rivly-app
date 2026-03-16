@@ -8,8 +8,16 @@ class RunRepository {
 
   Future<List<RunModel>> getRuns(String jobId) async {
     final response = await _client.get(ApiConstants.runs(jobId));
-    final data = response.data as List<dynamic>;
-    return data
+    final data = response.data;
+    final List<dynamic> results;
+    if (data is Map<String, dynamic> && data.containsKey('results')) {
+      results = data['results'] as List<dynamic>;
+    } else if (data is List<dynamic>) {
+      results = data;
+    } else {
+      results = [];
+    }
+    return results
         .map((e) => RunModel.fromJson(e as Map<String, dynamic>))
         .toList();
   }

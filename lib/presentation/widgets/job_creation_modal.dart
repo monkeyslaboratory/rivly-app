@@ -143,12 +143,8 @@ class _JobCreationModalState extends State<JobCreationModal> {
         }
       }
 
-      // Trigger the run
-      try {
-        await _jobRepository.triggerRun(job.id);
-      } catch (_) {
-        // Run trigger failed but job was created
-      }
+      // Trigger the run (fire-and-forget, runs async on backend)
+      _jobRepository.triggerRun(job.id).catchError((_) {});
 
       if (!mounted) return;
       Navigator.of(context).pop();
