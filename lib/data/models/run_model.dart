@@ -35,6 +35,7 @@ class RunModel {
     'screenshots': 'Capturing screenshots...',
     'analyzing': 'AI is analyzing...',
     'scoring': 'Calculating scores...',
+    'comparing': 'Generating competitive analysis...',
     'completed': 'Analysis complete!',
     'failed': 'Analysis failed',
     '': 'Preparing...',

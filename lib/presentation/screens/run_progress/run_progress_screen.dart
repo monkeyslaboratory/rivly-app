@@ -188,6 +188,7 @@ class _RunProgressBody extends StatelessWidget {
     _PhaseInfo('screenshots', 'Screenshots', 'Capturing pages'),
     _PhaseInfo('analyzing', 'AI Analysis', 'Claude analyzing'),
     _PhaseInfo('scoring', 'Scoring', 'Calculating UX scores'),
+    _PhaseInfo('comparing', 'Comparison', 'Competitive analysis'),
   ];
 
   Widget _buildPhaseTimeline(
