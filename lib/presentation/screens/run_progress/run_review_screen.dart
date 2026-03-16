@@ -22,9 +22,13 @@ class _RunReviewScreenState extends State<RunReviewScreen> {
   bool _isLoading = true;
   bool _isApproving = false;
   bool _isAddingPage = false;
+  bool _isAuthCrawling = false;
   String? _error;
   List<_ScreenshotEntry> _screenshots = [];
   final TextEditingController _urlController = TextEditingController();
+  final TextEditingController _authLoginUrlController = TextEditingController();
+  final TextEditingController _authEmailController = TextEditingController();
+  final TextEditingController _authPasswordController = TextEditingController();
   String? _competitorName;
 
   @override
@@ -36,6 +40,9 @@ class _RunReviewScreenState extends State<RunReviewScreen> {
   @override
   void dispose() {
     _urlController.dispose();
+    _authLoginUrlController.dispose();
+    _authEmailController.dispose();
+    _authPasswordController.dispose();
     super.dispose();
   }
 
@@ -68,7 +75,7 @@ class _RunReviewScreenState extends State<RunReviewScreen> {
             status: status,
             width: (shot['width'] as num?)?.toInt(),
             height: (shot['height'] as num?)?.toInt(),
-            selected: status == 'success',
+            selected: status == 'success',  // auth_required and failed are unchecked
           );
         }).toList();
         _isLoading = false;
@@ -135,6 +142,61 @@ class _RunReviewScreenState extends State<RunReviewScreen> {
           backgroundColor: AppColors.error,
         ),
       );
+    }
+  }
+
+  List<_ScreenshotEntry> get _authRequiredScreenshots =>
+      _screenshots.where((s) => s.status == 'auth_required').toList();
+
+  Future<void> _submitAuthCredentials() async {
+    final email = _authEmailController.text.trim();
+    final password = _authPasswordController.text.trim();
+    final loginUrl = _authLoginUrlController.text.trim();
+
+    if (email.isEmpty || password.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please enter both email and password.'),
+          backgroundColor: AppColors.warning,
+        ),
+      );
+      return;
+    }
+
+    setState(() => _isAuthCrawling = true);
+
+    try {
+      await _runRepository.submitAuthCredentials(
+        widget.runId,
+        email: email,
+        password: password,
+        loginUrl: loginUrl.isNotEmpty ? loginUrl : null,
+      );
+
+      // Reload screenshots to get the new authenticated versions
+      await _loadRunData();
+
+      if (!mounted) return;
+      _authEmailController.clear();
+      _authPasswordController.clear();
+      _authLoginUrlController.clear();
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Authenticated pages are being re-captured.'),
+          backgroundColor: AppColors.success,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Auth crawl failed: $e'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _isAuthCrawling = false);
     }
   }
 
@@ -343,6 +405,12 @@ class _RunReviewScreenState extends State<RunReviewScreen> {
               // Screenshot list
               ..._buildScreenshotCards(context, isDark),
 
+              // Auth-required section
+              if (_authRequiredScreenshots.isNotEmpty) ...[
+                const SizedBox(height: 24),
+                _buildAuthWallSection(context, isDark),
+              ],
+
               const SizedBox(height: 24),
 
               // Add custom page section
@@ -453,6 +521,315 @@ class _RunReviewScreenState extends State<RunReviewScreen> {
         ),
       );
     });
+  }
+
+  Widget _buildAuthWallSection(BuildContext context, bool isDark) {
+    final authPages = _authRequiredScreenshots;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppColors.accentSecondary.withValues(alpha: 0.06),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: AppColors.accentSecondary.withValues(alpha: 0.25),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header
+          Row(
+            children: [
+              const Icon(Icons.lock_outline, size: 20, color: AppColors.accentSecondary),
+              const SizedBox(width: 8),
+              Text(
+                '${authPages.length} page${authPages.length == 1 ? '' : 's'} require login',
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'These pages show a login form instead of content. '
+            'Provide credentials to capture the authenticated experience.',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: isDark
+                      ? AppColors.darkTextSecondary
+                      : AppColors.lightTextSecondary,
+                  height: 1.5,
+                ),
+          ),
+          const SizedBox(height: 14),
+
+          // Auth-required page list
+          ...authPages.map((shot) => Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: isDark
+                        ? AppColors.darkBgElevated
+                        : AppColors.lightBgElevated,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: AppColors.accentSecondary.withValues(alpha: 0.2),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.lock_outline, size: 16, color: AppColors.accentSecondary),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              shot.pageName,
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              shot.pageUrl,
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: isDark
+                                    ? AppColors.darkTextMuted
+                                    : AppColors.lightTextMuted,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Icon(
+                        Icons.warning_amber_rounded,
+                        size: 18,
+                        color: AppColors.warning,
+                      ),
+                    ],
+                  ),
+                ),
+              )),
+
+          const SizedBox(height: 16),
+
+          // Divider with label
+          Row(
+            children: [
+              Expanded(child: Divider(color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.1))),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                child: Text(
+                  'Login Credentials',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: isDark ? AppColors.darkTextMuted : AppColors.lightTextMuted,
+                  ),
+                ),
+              ),
+              Expanded(child: Divider(color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.1))),
+            ],
+          ),
+
+          const SizedBox(height: 12),
+
+          // Info notice
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: AppColors.accentSecondary.withValues(alpha: 0.06),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(Icons.info_outline, size: 16, color: AppColors.accentSecondary.withValues(alpha: 0.7)),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Credentials are used only for this analysis and are not shared with third parties.',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                      height: 1.4,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 14),
+
+          // Login URL field
+          Text(
+            'Login URL (optional)',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+            ),
+          ),
+          const SizedBox(height: 6),
+          TextField(
+            controller: _authLoginUrlController,
+            enabled: !_isAuthCrawling,
+            decoration: _authInputDecoration(
+              context,
+              isDark: isDark,
+              hintText: 'https://example.com/login',
+              prefixIcon: Icons.link,
+            ),
+            keyboardType: TextInputType.url,
+          ),
+
+          const SizedBox(height: 12),
+
+          // Email field
+          Text(
+            'Email / Username',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+            ),
+          ),
+          const SizedBox(height: 6),
+          TextField(
+            controller: _authEmailController,
+            enabled: !_isAuthCrawling,
+            decoration: _authInputDecoration(
+              context,
+              isDark: isDark,
+              hintText: 'user@example.com',
+              prefixIcon: Icons.person_outline,
+            ),
+            keyboardType: TextInputType.emailAddress,
+          ),
+
+          const SizedBox(height: 12),
+
+          // Password field
+          Text(
+            'Password',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+            ),
+          ),
+          const SizedBox(height: 6),
+          TextField(
+            controller: _authPasswordController,
+            enabled: !_isAuthCrawling,
+            obscureText: true,
+            decoration: _authInputDecoration(
+              context,
+              isDark: isDark,
+              hintText: '\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022',
+              prefixIcon: Icons.lock_outline,
+            ),
+          ),
+
+          const SizedBox(height: 18),
+
+          // Authenticate button
+          SizedBox(
+            width: double.infinity,
+            height: 48,
+            child: ElevatedButton.icon(
+              onPressed: _isAuthCrawling ? null : _submitAuthCredentials,
+              icon: _isAuthCrawling
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                    )
+                  : const Icon(Icons.lock_open, size: 18),
+              label: Text(
+                _isAuthCrawling ? 'Authenticating...' : 'Authenticate & Re-capture',
+                style: const TextStyle(fontWeight: FontWeight.w600),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.accentSecondary,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 10),
+
+          // Skip text
+          Center(
+            child: Text(
+              'Or skip \u2014 analysis will only cover publicly accessible pages.',
+              style: TextStyle(
+                fontSize: 12,
+                color: isDark ? AppColors.darkTextMuted : AppColors.lightTextMuted,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  InputDecoration _authInputDecoration(
+    BuildContext context, {
+    required bool isDark,
+    required String hintText,
+    required IconData prefixIcon,
+  }) {
+    return InputDecoration(
+      hintText: hintText,
+      hintStyle: TextStyle(
+        color: isDark ? AppColors.darkTextMuted : AppColors.lightTextMuted,
+        fontSize: 14,
+      ),
+      filled: true,
+      fillColor: isDark ? AppColors.darkBgElevated : AppColors.lightBgElevated,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: BorderSide(
+          color: isDark
+              ? Colors.white.withValues(alpha: 0.1)
+              : Colors.black.withValues(alpha: 0.1),
+        ),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: BorderSide(
+          color: isDark
+              ? Colors.white.withValues(alpha: 0.1)
+              : Colors.black.withValues(alpha: 0.1),
+        ),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: const BorderSide(color: AppColors.accentSecondary),
+      ),
+      prefixIcon: Icon(prefixIcon, size: 18),
+    );
   }
 
   Widget _buildAddPageSection(BuildContext context, bool isDark) {
@@ -666,19 +1043,24 @@ class _ScreenshotCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isSuccess = entry.status == 'success';
-    final borderColor = !isSuccess
-        ? AppColors.warning.withValues(alpha: 0.4)
-        : entry.selected
-            ? AppColors.accentSecondary.withValues(alpha: 0.3)
-            : (isDark
-                ? Colors.white.withValues(alpha: 0.06)
-                : Colors.black.withValues(alpha: 0.06));
+    final isAuthRequired = entry.status == 'auth_required';
+    final borderColor = isAuthRequired
+        ? AppColors.accentSecondary.withValues(alpha: 0.4)
+        : !isSuccess
+            ? AppColors.warning.withValues(alpha: 0.4)
+            : entry.selected
+                ? AppColors.accentSecondary.withValues(alpha: 0.3)
+                : (isDark
+                    ? Colors.white.withValues(alpha: 0.06)
+                    : Colors.black.withValues(alpha: 0.06));
 
-    final bgColor = !isSuccess
-        ? AppColors.warning.withValues(alpha: 0.04)
-        : isDark
-            ? AppColors.darkBgSecondary
-            : AppColors.lightBgSecondary;
+    final bgColor = isAuthRequired
+        ? AppColors.accentSecondary.withValues(alpha: 0.04)
+        : !isSuccess
+            ? AppColors.warning.withValues(alpha: 0.04)
+            : isDark
+                ? AppColors.darkBgSecondary
+                : AppColors.lightBgSecondary;
 
     final token = dioClient.dio.options.headers['Authorization'];
 
@@ -727,11 +1109,15 @@ class _ScreenshotCard extends StatelessWidget {
                       )
                     : Center(
                         child: Icon(
-                          entry.status == 'timeout'
-                              ? Icons.timer_off_outlined
-                              : Icons.warning_amber_rounded,
+                          isAuthRequired
+                              ? Icons.lock_outline
+                              : entry.status == 'timeout'
+                                  ? Icons.timer_off_outlined
+                                  : Icons.warning_amber_rounded,
                           size: 22,
-                          color: AppColors.warning,
+                          color: isAuthRequired
+                              ? AppColors.accentSecondary
+                              : AppColors.warning,
                         ),
                       ),
               ),
@@ -861,6 +1247,10 @@ class _StatusBadge extends StatelessWidget {
         color = AppColors.success;
         label = 'success';
         icon = Icons.check_circle_outline;
+      case 'auth_required':
+        color = AppColors.accentSecondary;
+        label = 'login required';
+        icon = Icons.lock_outline;
       case 'timeout':
         color = AppColors.warning;
         label = 'timeout';

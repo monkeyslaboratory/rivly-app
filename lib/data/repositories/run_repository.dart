@@ -48,4 +48,18 @@ class RunRepository {
     });
     return (response.data['added'] as List<dynamic>).map((e) => e as Map<String, dynamic>).toList();
   }
+
+  Future<void> submitAuthCredentials(String runId, {
+    required String email,
+    required String password,
+    String? loginUrl,
+  }) async {
+    await _client.post('${ApiConstants.runDetail(runId)}auth-crawl/', data: {
+      'credentials': {
+        'email': email,
+        'password': password,
+        if (loginUrl != null && loginUrl.isNotEmpty) 'login_url': loginUrl,
+      },
+    });
+  }
 }

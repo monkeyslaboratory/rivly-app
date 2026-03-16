@@ -283,54 +283,111 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
     final screenshots = (data['screenshots'] as List<dynamic>?) ?? [];
     if (screenshots.isEmpty) return const SizedBox.shrink();
 
+    final publicPages = screenshots
+        .whereType<Map<String, dynamic>>()
+        .where((s) => !((s['page_name'] as String?) ?? '').contains('_authenticated'))
+        .toList();
+    final authPages = screenshots
+        .whereType<Map<String, dynamic>>()
+        .where((s) => ((s['page_name'] as String?) ?? '').contains('_authenticated'))
+        .toList();
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _sectionTitle('Screenshots'),
-        SizedBox(
-          height: 160,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            itemCount: screenshots.length,
-            separatorBuilder: (_, __) => const SizedBox(width: 8),
-            itemBuilder: (context, i) {
-              final shot = (screenshots[i] as Map<String, dynamic>?) ?? {};
-              final shotId = shot['id']?.toString() ?? '';
-              final pageName = (shot['page_name'] as String?) ?? '';
-              final device = (shot['device_type'] as String?) ?? '';
-              final url = 'http://localhost:8000/api/v1/runs/screenshots/$shotId/';
 
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: Image.network(
-                      url,
-                      width: 200,
-                      height: 130,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => Container(
-                        width: 200,
-                        height: 130,
-                        color: Theme.of(context).dividerColor,
-                        child: const Icon(Icons.broken_image, size: 32),
+        // Public pages
+        if (publicPages.isNotEmpty) ...[
+          _buildScreenshotList(publicPages),
+        ],
+
+        // Authenticated pages divider + list
+        if (authPages.isNotEmpty) ...[
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: Divider(
+                  color: AppColors.accentSecondary.withValues(alpha: 0.3),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 10),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.lock_outline, size: 14, color: AppColors.accentSecondary),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Authenticated Pages',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.accentSecondary,
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '$pageName ($device)',
-                    style: const TextStyle(fontSize: 11),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              );
-            },
+                  ],
+                ),
+              ),
+              Expanded(
+                child: Divider(
+                  color: AppColors.accentSecondary.withValues(alpha: 0.3),
+                ),
+              ),
+            ],
           ),
-        ),
+          const SizedBox(height: 8),
+          _buildScreenshotList(authPages),
+        ],
+
         const SizedBox(height: 16),
       ],
+    );
+  }
+
+  Widget _buildScreenshotList(List<Map<String, dynamic>> screenshots) {
+    return SizedBox(
+      height: 160,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: screenshots.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        itemBuilder: (context, i) {
+          final shot = screenshots[i];
+          final shotId = shot['id']?.toString() ?? '';
+          final pageName = (shot['page_name'] as String?) ?? '';
+          final device = (shot['device_type'] as String?) ?? '';
+          final url = 'http://localhost:8000/api/v1/runs/screenshots/$shotId/';
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Image.network(
+                  url,
+                  width: 200,
+                  height: 130,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => Container(
+                    width: 200,
+                    height: 130,
+                    color: Theme.of(context).dividerColor,
+                    child: const Icon(Icons.broken_image, size: 32),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                '$pageName ($device)',
+                style: const TextStyle(fontSize: 11),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          );
+        },
+      ),
     );
   }
 
