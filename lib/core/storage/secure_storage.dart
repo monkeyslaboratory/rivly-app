@@ -1,35 +1,57 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
+/// Simple in-memory + localStorage fallback for web.
+/// Uses FlutterSecureStorage on mobile, in-memory map on web.
 class SecureStorageService {
   static const _accessTokenKey = 'access_token';
   static const _refreshTokenKey = 'refresh_token';
 
-  final FlutterSecureStorage _storage;
+  static final SecureStorageService _instance = SecureStorageService._();
+  factory SecureStorageService() => _instance;
 
-  SecureStorageService()
-      : _storage = const FlutterSecureStorage(
-          aOptions: AndroidOptions(encryptedSharedPreferences: true),
-        );
+  final FlutterSecureStorage? _nativeStorage;
+  final Map<String, String> _memoryStore = {};
 
-  Future<String?> getAccessToken() async {
-    return _storage.read(key: _accessTokenKey);
+  SecureStorageService._()
+      : _nativeStorage = kIsWeb
+            ? null
+            : const FlutterSecureStorage(
+                aOptions: AndroidOptions(encryptedSharedPreferences: true),
+              );
+
+  Future<String?> _read(String key) async {
+    if (kIsWeb) {
+      return _memoryStore[key];
+    }
+    return _nativeStorage!.read(key: key);
   }
 
-  Future<void> setAccessToken(String token) async {
-    await _storage.write(key: _accessTokenKey, value: token);
+  Future<void> _write(String key, String value) async {
+    if (kIsWeb) {
+      _memoryStore[key] = value;
+      return;
+    }
+    await _nativeStorage!.write(key: key, value: value);
   }
 
-  Future<String?> getRefreshToken() async {
-    return _storage.read(key: _refreshTokenKey);
+  Future<void> _delete(String key) async {
+    if (kIsWeb) {
+      _memoryStore.remove(key);
+      return;
+    }
+    await _nativeStorage!.delete(key: key);
   }
 
-  Future<void> setRefreshToken(String token) async {
-    await _storage.write(key: _refreshTokenKey, value: token);
-  }
+  Future<String?> getAccessToken() => _read(_accessTokenKey);
+  Future<void> setAccessToken(String token) => _write(_accessTokenKey, token);
+
+  Future<String?> getRefreshToken() => _read(_refreshTokenKey);
+  Future<void> setRefreshToken(String token) => _write(_refreshTokenKey, token);
 
   Future<void> clearTokens() async {
-    await _storage.delete(key: _accessTokenKey);
-    await _storage.delete(key: _refreshTokenKey);
+    await _delete(_accessTokenKey);
+    await _delete(_refreshTokenKey);
   }
 
   Future<bool> hasTokens() async {

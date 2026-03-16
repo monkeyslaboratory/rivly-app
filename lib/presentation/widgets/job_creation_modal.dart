@@ -104,7 +104,10 @@ class _JobCreationModalState extends State<JobCreationModal> {
       _errorMessage = null;
     });
 
-    final productUrl = _productUrlController.text.trim();
+    var productUrl = _productUrlController.text.trim();
+    if (!productUrl.startsWith('http://') && !productUrl.startsWith('https://')) {
+      productUrl = 'https://$productUrl';
+    }
     final jobName = _jobNameController.text.trim().isNotEmpty
         ? _jobNameController.text.trim()
         : _generateJobName(productUrl);
