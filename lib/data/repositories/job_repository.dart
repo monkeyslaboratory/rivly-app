@@ -94,10 +94,35 @@ class JobRepository {
       ApiConstants.discoverCompetitors,
       data: body,
     );
-    final data = response.data as List<dynamic>;
-    return data
+    final data = response.data;
+    final List<dynamic> items;
+    if (data is List) {
+      items = data;
+    } else if (data is Map && data.containsKey('competitors')) {
+      items = data['competitors'] as List<dynamic>;
+    } else {
+      items = [];
+    }
+    return items
         .map((e) => CompetitorModel.fromJson(e as Map<String, dynamic>))
         .toList();
+  }
+
+  Future<List<Map<String, dynamic>>> discoverCompetitorsRaw({
+    required String productUrl,
+  }) async {
+    final response = await _client.post(
+      ApiConstants.discoverCompetitors,
+      data: {'product_url': productUrl},
+    );
+    final data = response.data;
+    if (data is List) {
+      return data.map((e) => e as Map<String, dynamic>).toList();
+    }
+    if (data is Map && data.containsKey('competitors')) {
+      return (data['competitors'] as List).map((e) => e as Map<String, dynamic>).toList();
+    }
+    return [];
   }
 
   Future<List<String>> suggestAreas({

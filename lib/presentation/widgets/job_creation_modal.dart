@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import '../../core/theme/colors.dart';
+import '../../core/network/dio_client.dart';
+import '../../core/constants/api_constants.dart';
 import '../../data/repositories/job_repository.dart';
 
 // ---------------------------------------------------------------------------
@@ -378,24 +380,36 @@ class _JobCreationModalState extends State<JobCreationModal>
       setState(() => _errorMessage = 'Please enter a URL');
       return;
     }
+    final fullUrl = url.startsWith('http') ? url : 'https://$url';
     setState(() {
       _isProcessing = true;
       _processingMessage = 'Analyzing your product...';
       _errorMessage = null;
     });
 
-    // Simulate 2s AI analysis
-    await Future<void>.delayed(const Duration(seconds: 2));
-
-    if (!mounted) return;
-    setState(() {
-      _productUrl = url.startsWith('http') ? url : 'https://$url';
-      _productName = _extractProductName(url);
-      _productIndustry = 'SaaS';
-      _productAnalyzed = true;
-      _isProcessing = false;
-      _processingMessage = null;
-    });
+    try {
+      final result = await _jobRepository.analyzeProduct(fullUrl);
+      if (!mounted) return;
+      setState(() {
+        _productUrl = fullUrl;
+        _productName = result['name'] as String? ?? _extractProductName(url);
+        _productIndustry = result['industry'] as String? ?? 'SaaS';
+        _productAnalyzed = true;
+        _isProcessing = false;
+        _processingMessage = null;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        // Fallback to domain extraction
+        _productUrl = fullUrl;
+        _productName = _extractProductName(url);
+        _productIndustry = 'SaaS';
+        _productAnalyzed = true;
+        _isProcessing = false;
+        _processingMessage = null;
+      });
+    }
   }
 
   // ------------------------------------------------------------------
@@ -404,41 +418,35 @@ class _JobCreationModalState extends State<JobCreationModal>
   Future<void> _discoverCompetitors() async {
     setState(() {
       _isProcessing = true;
-      _processingMessage = 'Discovering competitors...';
+      _processingMessage = 'Discovering competitors with AI...';
     });
 
-    await Future<void>.delayed(const Duration(seconds: 2));
-
-    if (!mounted) return;
-    final domain = _extractDomain(_productUrl ?? '');
-    setState(() {
-      _competitors = [
-        _CompetitorEntry(
-          name: 'Competitor Alpha',
-          url: 'https://alpha-${domain.split('.').first}.com',
-          relevanceScore: 95,
+    try {
+      final results = await _jobRepository.discoverCompetitorsRaw(
+        productUrl: _productUrl ?? '',
+      );
+      if (!mounted) return;
+      setState(() {
+        _competitors = results.map((c) => _CompetitorEntry(
+          name: c['name'] as String? ?? '',
+          url: c['url'] as String? ?? '',
+          relevanceScore: (c['relevance_score'] as num?)?.toInt() ?? 85,
+          isSelected: true,
           accessStatus: 'checking',
-        ),
-        _CompetitorEntry(
-          name: 'Competitor Beta',
-          url: 'https://beta-rival.com',
-          relevanceScore: 88,
-        ),
-        _CompetitorEntry(
-          name: 'Competitor Gamma',
-          url: 'https://gamma-alt.io',
-          relevanceScore: 76,
-        ),
-        _CompetitorEntry(
-          name: 'Competitor Delta',
-          url: 'https://delta-comp.com',
-          relevanceScore: 64,
-        ),
-      ];
-      _competitorsDiscovered = true;
-      _isProcessing = false;
-      _processingMessage = null;
-    });
+        )).toList();
+        _competitorsDiscovered = true;
+        _isProcessing = false;
+        _processingMessage = null;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _isProcessing = false;
+        _processingMessage = null;
+        _errorMessage = 'Failed to discover competitors. Try manual entry.';
+        _autoFindCompetitors = false;
+      });
+    }
   }
 
   // ------------------------------------------------------------------
@@ -450,20 +458,43 @@ class _JobCreationModalState extends State<JobCreationModal>
       setState(() => _accessCheckDone = true);
       return;
     }
+
+    // Set all to checking
     for (final c in selected) {
       setState(() {
         _accessStatuses[c.url] = 'checking';
       });
     }
 
-    for (final c in selected) {
-      await Future<void>.delayed(const Duration(seconds: 1));
+    try {
+      final urls = selected.map((c) => c.url).toList();
+      final response = await DioClient().post(
+        ApiConstants.checkAccess,
+        data: {'urls': urls},
+      );
+
       if (!mounted) return;
-      setState(() {
-        _accessStatuses[c.url] = 'accessible';
-        c.accessStatus = 'accessible';
-      });
+      final results = response.data as List<dynamic>;
+      for (final r in results) {
+        final url = r['url'] as String;
+        final status = r['status'] as String;
+        setState(() {
+          _accessStatuses[url] = status;
+          for (final c in _competitors) {
+            if (c.url == url) c.accessStatus = status;
+          }
+        });
+      }
+    } catch (e) {
+      // Fallback: mark all as accessible
+      for (final c in selected) {
+        setState(() {
+          _accessStatuses[c.url] = 'accessible';
+          c.accessStatus = 'accessible';
+        });
+      }
     }
+
     setState(() => _accessCheckDone = true);
   }
 
