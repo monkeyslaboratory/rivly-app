@@ -26,13 +26,16 @@ class RunModel {
   // Computed
   String get phaseLabel => _phaseLabels[currentPhase] ?? currentPhase;
   bool get isRunning =>
-      !['completed', 'partial', 'failed', 'cancelled'].contains(status);
+      !['completed', 'partial', 'failed', 'cancelled', 'discovered'].contains(status);
+  bool get needsApproval => status == 'discovered';
   bool get isCompleted => status == 'completed' || status == 'partial';
   bool get isFailed => status == 'failed' || status == 'cancelled';
 
   static const _phaseLabels = {
     'preflight': 'Checking accessibility...',
     'screenshots': 'Capturing screenshots...',
+    'discovered': 'Pages discovered — review required',
+    'approved': 'Analysis starting...',
     'analyzing': 'AI is analyzing...',
     'scoring': 'Calculating scores...',
     'comparing': 'Generating competitive analysis...',

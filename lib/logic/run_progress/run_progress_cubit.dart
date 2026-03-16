@@ -20,7 +20,7 @@ class RunProgressCubit extends Cubit<RunProgressState> {
       final run = await _runRepository.getRun(runId);
       emit(state.copyWith(run: run, isLoading: false));
 
-      if (run.isRunning) {
+      if (run.isRunning && !run.needsApproval) {
         _startPolling(runId);
       }
     } catch (e) {
@@ -44,7 +44,7 @@ class RunProgressCubit extends Cubit<RunProgressState> {
       if (isClosed) return;
       emit(state.copyWith(run: run));
 
-      if (!run.isRunning) {
+      if (!run.isRunning || run.needsApproval) {
         _stopPolling();
       }
     } catch (_) {

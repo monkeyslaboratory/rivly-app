@@ -129,6 +129,46 @@ class _RunProgressBody extends StatelessWidget {
                 ],
 
                 // -- Actions --
+                if (state.needsApproval) ...[
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: AppColors.warning.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppColors.warning.withValues(alpha: 0.3)),
+                    ),
+                    child: Column(
+                      children: [
+                        const Icon(Icons.pageview_rounded, size: 32, color: AppColors.warning),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Discovery complete',
+                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.w600,
+                              ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Review the discovered pages before starting AI analysis.',
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                color: isDark
+                                    ? AppColors.darkTextSecondary
+                                    : AppColors.lightTextSecondary,
+                              ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 16),
+                        RivlyButton(
+                          label: 'Review Discovered Pages',
+                          onPressed: () => context.go('/runs/${state.run!.id}/review'),
+                          width: double.infinity,
+                          icon: Icons.arrow_forward,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
                 if (state.isCompleted)
                   RivlyButton(
                     label: 'View Report',
@@ -166,6 +206,9 @@ class _RunProgressBody extends StatelessWidget {
     } else if (state.isCompleted) {
       ringColor = AppColors.success;
       ringLabel = 'Complete';
+    } else if (state.needsApproval) {
+      ringColor = AppColors.warning;
+      ringLabel = 'Review Required';
     } else {
       ringColor = AppColors.accentPrimary;
       ringLabel = 'Running';
@@ -186,6 +229,7 @@ class _RunProgressBody extends StatelessWidget {
   static const _phases = [
     _PhaseInfo('preflight', 'Preflight', 'Checking accessibility'),
     _PhaseInfo('screenshots', 'Screenshots', 'Capturing pages'),
+    _PhaseInfo('discovered', 'Review', 'Approve discovered pages'),
     _PhaseInfo('analyzing', 'AI Analysis', 'Claude analyzing'),
     _PhaseInfo('scoring', 'Scoring', 'Calculating UX scores'),
     _PhaseInfo('comparing', 'Comparison', 'Competitive analysis'),
@@ -221,6 +265,16 @@ class _RunProgressBody extends StatelessWidget {
               phaseStatus = _PhaseStatus.done;
             } else if (i == currentIdx) {
               phaseStatus = _PhaseStatus.failed;
+            } else {
+              phaseStatus = _PhaseStatus.pending;
+            }
+          } else if (state.needsApproval) {
+            // Discovery phase: mark preflight+screenshots done, discovered as active, rest pending
+            final discoveredIdx = phaseOrder.indexOf('discovered');
+            if (i < discoveredIdx) {
+              phaseStatus = _PhaseStatus.done;
+            } else if (i == discoveredIdx) {
+              phaseStatus = _PhaseStatus.active;
             } else {
               phaseStatus = _PhaseStatus.pending;
             }

@@ -35,4 +35,17 @@ class RunRepository {
   Future<void> cancelRun(String id) async {
     await _client.post('${ApiConstants.runDetail(id)}cancel/');
   }
+
+  Future<void> approveRun(String runId, {List<String> removeIds = const []}) async {
+    await _client.post('${ApiConstants.runDetail(runId)}approve/', data: {
+      'remove_screenshot_ids': removeIds,
+    });
+  }
+
+  Future<List<Map<String, dynamic>>> addPages(String runId, List<String> urls) async {
+    final response = await _client.post('${ApiConstants.runDetail(runId)}add-pages/', data: {
+      'urls': urls,
+    });
+    return (response.data['added'] as List<dynamic>).map((e) => e as Map<String, dynamic>).toList();
+  }
 }

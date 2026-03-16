@@ -11,6 +11,7 @@ import 'presentation/screens/auth/login_screen.dart';
 import 'presentation/screens/auth/register_screen.dart';
 import 'presentation/screens/dashboard/dashboard_screen.dart';
 import 'presentation/screens/run_progress/run_progress_screen.dart';
+import 'presentation/screens/run_progress/run_review_screen.dart';
 import 'presentation/screens/reports/report_detail_screen.dart';
 
 class RivlyApp extends StatefulWidget {
@@ -69,6 +70,13 @@ class _RivlyAppState extends State<RivlyApp> {
           builder: (context, state) {
             final runId = state.pathParameters['id']!;
             return RunProgressScreen(runId: runId);
+          },
+        ),
+        GoRoute(
+          path: '/runs/:id/review',
+          builder: (context, state) {
+            final runId = state.pathParameters['id']!;
+            return RunReviewScreen(runId: runId);
           },
         ),
         GoRoute(

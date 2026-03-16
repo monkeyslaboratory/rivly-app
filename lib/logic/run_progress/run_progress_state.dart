@@ -18,6 +18,7 @@ class RunProgressState extends Equatable {
   int get progress => run?.progress ?? 0;
   String get phaseLabel => run?.phaseLabel ?? 'Preparing...';
   bool get isRunning => run?.isRunning ?? false;
+  bool get needsApproval => run?.needsApproval ?? false;
   bool get isCompleted => run?.isCompleted ?? false;
   bool get isFailed => run?.isFailed ?? false;
   String get status => run?.status ?? 'queued';

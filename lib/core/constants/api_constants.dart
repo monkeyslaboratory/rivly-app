@@ -24,6 +24,7 @@ class ApiConstants {
   static String runs(String jobId) => '$baseUrl/runs/jobs/$jobId/runs/';
   static String runDetail(String id) => '$baseUrl/runs/$id/';
   static String runReport(String id) => '$baseUrl/runs/$id/report/';
+  static String screenshotImage(String id) => '$baseUrl/runs/screenshots/$id/';
 
   // WebSocket
   static String wsRun(String runId, String token) =>
