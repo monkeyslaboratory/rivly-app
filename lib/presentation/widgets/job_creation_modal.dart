@@ -192,7 +192,6 @@ class _JobCreationModalState extends State<JobCreationModal>
   // ---- Controllers ----
   final _productUrlController = TextEditingController();
   final _competitorsController = TextEditingController();
-  final _customTagController = TextEditingController();
 
   // ---- Animation ----
   late AnimationController _slideController;
@@ -221,37 +220,23 @@ class _JobCreationModalState extends State<JobCreationModal>
   List<_CompetitorEntry> _competitors = [];
   bool _competitorsDiscovered = false;
 
-  // ---- Step 3: Analysis Areas ----
-  final Map<String, bool> _analysisAreas = {
-    'Homepage': true,
-    'Pricing': true,
-    'Navigation': true,
-    'Onboarding': false,
-    'Mobile UX': false,
-    'Performance': false,
-    'Content': false,
-    'CTA Effectiveness': false,
-  };
-  final List<String> _customAreas = [];
-
-  // ---- Step 4: Access Check ----
+  // ---- Step 3: Access Check ----
   final Map<String, String> _accessStatuses = {};
   bool _accessCheckDone = false;
 
-  // ---- Step 5: Schedule ----
+  // ---- Step 4: Schedule ----
   String _scheduleType = 'once';
   int? _scheduleDayOfWeek;
   int? _scheduleDayOfMonth;
   TimeOfDay _scheduleTime = const TimeOfDay(hour: 9, minute: 0);
 
-  // ---- Step 6: Device ----
+  // ---- Step 5: Device ----
   String _deviceMode = 'desktop';
 
   // ---- Step titles ----
   static const _stepTitles = [
     'Product URL',
     'Competitors',
-    'Analysis Areas',
     'Access Check',
     'Schedule',
     'Device',
@@ -261,7 +246,6 @@ class _JobCreationModalState extends State<JobCreationModal>
   static const _stepSubtitles = [
     'Enter your product URL to get started',
     'Choose your competitive landscape',
-    'Select what to analyze',
     'Verifying competitor accessibility',
     'Set your analysis cadence',
     'Choose target devices',
@@ -296,7 +280,6 @@ class _JobCreationModalState extends State<JobCreationModal>
   void dispose() {
     _productUrlController.dispose();
     _competitorsController.dispose();
-    _customTagController.dispose();
     _slideController.dispose();
     _successController.dispose();
     super.dispose();
@@ -306,7 +289,7 @@ class _JobCreationModalState extends State<JobCreationModal>
   // Navigation
   // ------------------------------------------------------------------
   void _goToStep(int step) {
-    if (step < 1 || step > 7 || step == _currentStep) return;
+    if (step < 1 || step > 6 || step == _currentStep) return;
     setState(() {
       _slidingForward = step > _currentStep;
       _slideAnimation = Tween<Offset>(
@@ -343,16 +326,6 @@ class _JobCreationModalState extends State<JobCreationModal>
     if (parts.isEmpty) return domain;
     final name = parts.first;
     return name[0].toUpperCase() + name.substring(1);
-  }
-
-  List<String> _getSelectedAreas() {
-    final selected = _analysisAreas.entries
-        .where((e) => e.value)
-        .map((e) => e.key.toLowerCase().replaceAll(' ', '_'))
-        .toList();
-    selected
-        .addAll(_customAreas.map((t) => t.toLowerCase().replaceAll(' ', '_')));
-    return selected;
   }
 
   List<_CompetitorEntry> _getSelectedCompetitors() {
@@ -516,14 +489,13 @@ class _JobCreationModalState extends State<JobCreationModal>
     }
 
     final jobName = '${_productName ?? _extractProductName(productUrl)} vs Competitors';
-    final selectedAreas = _getSelectedAreas();
     final selectedCompetitors = _getSelectedCompetitors();
 
     try {
       final job = await _jobRepository.createJob(
         name: jobName,
         productUrl: productUrl,
-        areas: selectedAreas,
+        areas: [],
         deviceType: _deviceMode == 'both' ? 'both' : _deviceMode,
         scheduleFrequency: _scheduleFrequencyApiValue(),
       );
@@ -735,7 +707,7 @@ class _JobCreationModalState extends State<JobCreationModal>
   Widget _buildStepIndicator(bool isDark) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
-      children: List.generate(7, (i) {
+      children: List.generate(6, (i) {
         final step = i + 1;
         final isCompleted = step < _currentStep;
         final isActive = step == _currentStep;
@@ -845,14 +817,12 @@ class _JobCreationModalState extends State<JobCreationModal>
       case 2:
         return _buildStep2(isDark, borderColor);
       case 3:
-        return _buildStep3(isDark, borderColor);
-      case 4:
         return _buildStep4(isDark, borderColor);
-      case 5:
+      case 4:
         return _buildStep5(isDark, borderColor);
-      case 6:
+      case 5:
         return _buildStep6(isDark, borderColor);
-      case 7:
+      case 6:
         return _buildStep7(isDark, borderColor);
       default:
         return const SizedBox.shrink();
@@ -1248,160 +1218,7 @@ class _JobCreationModalState extends State<JobCreationModal>
   }
 
   // ==================================================================
-  // STEP 3 – Analysis Areas
-  // ==================================================================
-  Widget _buildStep3(bool isDark, Color borderColor) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // AI recommended label
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-          margin: const EdgeInsets.only(bottom: 12),
-          decoration: BoxDecoration(
-            color: AppColors.accentSecondary.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(6),
-          ),
-          child: const Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.auto_awesome, size: 13, color: AppColors.accentSecondary),
-              SizedBox(width: 4),
-              Text(
-                'AI-recommended areas pre-selected',
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.accentSecondary,
-                ),
-              ),
-            ],
-          ),
-        ),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: [
-            ..._analysisAreas.entries.map((entry) {
-              final isSelected = entry.value;
-              return FilterChip(
-                label: Text(
-                  entry.key,
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                    color: isSelected
-                        ? Colors.white
-                        : (isDark
-                            ? AppColors.darkTextSecondary
-                            : AppColors.lightTextSecondary),
-                  ),
-                ),
-                selected: isSelected,
-                onSelected: (selected) {
-                  setState(() => _analysisAreas[entry.key] = selected);
-                },
-                selectedColor: AppColors.accentSecondary,
-                backgroundColor:
-                    isDark ? AppColors.darkBgSubtle : AppColors.lightBgSubtle,
-                checkmarkColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  side: BorderSide(
-                    color: isSelected
-                        ? AppColors.accentSecondary
-                        : borderColor,
-                  ),
-                ),
-                showCheckmark: true,
-                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                visualDensity: VisualDensity.compact,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-              );
-            }),
-            ..._customAreas.map((tag) {
-              return Chip(
-                label: Text(
-                  tag,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.white,
-                  ),
-                ),
-                backgroundColor: AppColors.accentSecondary,
-                deleteIconColor: Colors.white70,
-                onDeleted: () {
-                  setState(() => _customAreas.remove(tag));
-                },
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  side: const BorderSide(color: AppColors.accentSecondary),
-                ),
-                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                visualDensity: VisualDensity.compact,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-              );
-            }),
-          ],
-        ),
-        const SizedBox(height: 14),
-        // Custom tag input
-        Row(
-          children: [
-            Expanded(
-              child: TextField(
-                controller: _customTagController,
-                decoration: InputDecoration(
-                  hintText: 'Add custom area...',
-                  isDense: true,
-                  contentPadding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(color: borderColor),
-                  ),
-                ),
-                style: const TextStyle(fontSize: 13),
-                onSubmitted: (_) => _addCustomArea(),
-              ),
-            ),
-            const SizedBox(width: 8),
-            SizedBox(
-              height: 36,
-              child: TextButton(
-                onPressed: _addCustomArea,
-                style: TextButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                child: const Text('Add'),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 20),
-        _buildNavigationRow(isDark),
-      ],
-    );
-  }
-
-  void _addCustomArea() {
-    final tag = _customTagController.text.trim();
-    if (tag.isNotEmpty && !_customAreas.contains(tag)) {
-      setState(() {
-        _customAreas.add(tag);
-        _customTagController.clear();
-      });
-    }
-  }
-
-  // ==================================================================
-  // STEP 4 – Access Check
+  // STEP 4 – Access Check (displayed as step 3)
   // ==================================================================
   Widget _buildStep4(bool isDark, Color borderColor) {
     final selected = _getSelectedCompetitors();
@@ -1907,7 +1724,6 @@ class _JobCreationModalState extends State<JobCreationModal>
   // ==================================================================
   Widget _buildStep7(bool isDark, Color borderColor) {
     final selectedCompetitors = _getSelectedCompetitors();
-    final selectedAreas = _getSelectedAreas();
     final scheduleLabel = _scheduleType == 'once'
         ? 'One-time'
         : _scheduleType[0].toUpperCase() + _scheduleType.substring(1);
@@ -1951,10 +1767,8 @@ class _JobCreationModalState extends State<JobCreationModal>
               _buildSummaryRow(
                 isDark,
                 icon: Icons.analytics_outlined,
-                label: 'Analysis areas',
-                value: selectedAreas.length == 1
-                    ? '1 area'
-                    : '${selectedAreas.length} areas',
+                label: 'Analysis',
+                value: 'Full auto-analysis',
               ),
               _buildSummaryDivider(borderColor),
               _buildSummaryRow(
