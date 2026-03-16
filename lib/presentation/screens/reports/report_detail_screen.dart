@@ -1,12 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../../../core/network/api_exception.dart';
 import '../../../core/theme/colors.dart';
-import '../../../data/models/report_model.dart';
 import '../../../data/repositories/run_repository.dart';
 import '../../widgets/charts/score_gauge.dart';
-import '../../widgets/common/loading_shimmer.dart';
-import '../../widgets/common/rivly_card.dart';
+import '../../widgets/common/rivly_button.dart';
 
 class ReportDetailScreen extends StatefulWidget {
   final String runId;
@@ -19,7 +16,7 @@ class ReportDetailScreen extends StatefulWidget {
 
 class _ReportDetailScreenState extends State<ReportDetailScreen> {
   final RunRepository _runRepository = RunRepository();
-  ReportModel? _report;
+  Map<String, dynamic>? _runData;
   bool _isLoading = true;
   String? _error;
 
@@ -30,452 +27,310 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
   }
 
   Future<void> _loadReport() async {
-    setState(() {
-      _isLoading = true;
-      _error = null;
-    });
-
+    setState(() { _isLoading = true; _error = null; });
     try {
-      final report = await _runRepository.getReport(widget.runId);
-      setState(() {
-        _report = report;
-        _isLoading = false;
-      });
-    } on ApiException catch (e) {
-      setState(() {
-        _error = e.message;
-        _isLoading = false;
-      });
+      final response = await _runRepository.getRawRun(widget.runId);
+      setState(() { _runData = response; _isLoading = false; });
     } catch (e) {
-      setState(() {
-        _error = 'Failed to load report';
-        _isLoading = false;
-      });
+      setState(() { _error = e.toString(); _isLoading = false; });
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => context.go('/dashboard'),
         ),
-        title: const Text('Report'),
+        title: const Text('Analysis Report'),
       ),
-      body: _buildBody(context),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _error != null
+              ? _buildError(isDark)
+              : _runData != null
+                  ? _buildReport(isDark)
+                  : _buildEmpty(isDark),
     );
   }
 
-  Widget _buildBody(BuildContext context) {
-    if (_isLoading) {
-      return _buildLoadingState(context);
-    }
-
-    if (_error != null) {
-      return _buildErrorState(context);
-    }
-
-    if (_report == null) {
-      return _buildEmptyState(context);
-    }
-
-    final report = _report!;
-
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Overall score
-          Center(
-            child: ScoreGauge(
-              score: report.score,
-              size: 160,
-              strokeWidth: 14,
-              label: 'Overall Score',
-            ),
-          ),
-          const SizedBox(height: 24),
-
-          // Summary
-          Text(
-            'Summary',
-            style: Theme.of(context).textTheme.headlineSmall,
-          ),
-          const SizedBox(height: 8),
-          RivlyCard(
-            child: Text(
-              report.summary,
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-          ),
-          const SizedBox(height: 24),
-
-          // Competitor scores
-          if (report.competitorScores.isNotEmpty) ...[
-            Text(
-              'Competitor Scores',
-              style: Theme.of(context).textTheme.headlineSmall,
-            ),
-            const SizedBox(height: 12),
-            ...report.competitorScores.entries.map((entry) {
-              final competitor = entry.value;
-              return RivlyCard(
-                margin: const EdgeInsets.only(bottom: 8),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            competitor.name,
-                            style:
-                                Theme.of(context).textTheme.titleMedium,
-                          ),
-                        ),
-                        ScoreGauge(
-                          score: competitor.overallScore,
-                          size: 48,
-                          strokeWidth: 4,
-                        ),
-                      ],
-                    ),
-                    if (competitor.areaScores.isNotEmpty) ...[
-                      const SizedBox(height: 12),
-                      ...competitor.areaScores.entries.map((area) {
-                        return Padding(
-                          padding:
-                              const EdgeInsets.symmetric(vertical: 4),
-                          child: Row(
-                            children: [
-                              Expanded(
-                                flex: 2,
-                                child: Text(
-                                  area.key,
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .bodySmall,
-                                ),
-                              ),
-                              Expanded(
-                                flex: 3,
-                                child: ClipRRect(
-                                  borderRadius:
-                                      BorderRadius.circular(3),
-                                  child: LinearProgressIndicator(
-                                    value: area.value / 100.0,
-                                    backgroundColor:
-                                        Theme.of(context).dividerColor,
-                                    valueColor:
-                                        AlwaysStoppedAnimation<Color>(
-                                      _scoreColor(area.value),
-                                    ),
-                                    minHeight: 6,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              SizedBox(
-                                width: 30,
-                                child: Text(
-                                  '${area.value}',
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .bodySmall
-                                      ?.copyWith(
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                  textAlign: TextAlign.right,
-                                ),
-                              ),
-                            ],
-                          ),
-                        );
-                      }),
-                    ],
-                  ],
-                ),
-              );
-            }),
-            const SizedBox(height: 24),
-          ],
-
-          // Recommendations
-          if (report.recommendations.isNotEmpty) ...[
-            Text(
-              'Recommendations',
-              style: Theme.of(context).textTheme.headlineSmall,
-            ),
-            const SizedBox(height: 12),
-            ...report.recommendations.map((rec) {
-              return RivlyCard(
-                margin: const EdgeInsets.only(bottom: 8),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        _PriorityBadge(priority: rec.priority),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            rec.title,
-                            style:
-                                Theme.of(context).textTheme.titleMedium,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      rec.description,
-                      style: Theme.of(context).textTheme.bodyMedium,
-                    ),
-                    const SizedBox(height: 4),
-                    Chip(
-                      label: Text(rec.area,
-                          style: const TextStyle(fontSize: 11)),
-                      materialTapTargetSize:
-                          MaterialTapTargetSize.shrinkWrap,
-                      visualDensity: VisualDensity.compact,
-                    ),
-                  ],
-                ),
-              );
-            }),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _buildLoadingState(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        children: [
-          const SizedBox(height: 20),
-          // Score gauge placeholder
-          Center(
-            child: Container(
-              width: 160,
-              height: 160,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: isDark
-                    ? AppColors.darkBgSubtle
-                    : AppColors.lightBgSubtle,
-              ),
-              child: Center(
-                child: SizedBox(
-                  width: 40,
-                  height: 40,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 3,
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                      AppColors.accentPrimary.withValues(alpha: 0.5),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 32),
-          // Shimmer cards
-          LoadingShimmer.list(count: 3, itemHeight: 100),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildErrorState(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
+  Widget _buildError(bool isDark) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Container(
-          constraints: const BoxConstraints(maxWidth: 400),
-          padding: const EdgeInsets.all(28),
-          decoration: BoxDecoration(
-            color: isDark ? AppColors.darkBgElevated : Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: AppColors.error.withValues(alpha: 0.2),
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.error.withValues(alpha: 0.05),
-                blurRadius: 20,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 56,
-                height: 56,
-                decoration: BoxDecoration(
-                  color: AppColors.error.withValues(alpha: 0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.error_outline,
-                  size: 28,
-                  color: AppColors.error,
-                ),
-              ),
-              const SizedBox(height: 20),
-              Text(
-                'Failed to load report',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                _error ?? 'An unexpected error occurred',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: isDark
-                          ? AppColors.darkTextSecondary
-                          : AppColors.lightTextSecondary,
-                    ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                height: 44,
-                child: OutlinedButton.icon(
-                  onPressed: _loadReport,
-                  icon: const Icon(Icons.refresh, size: 18),
-                  label: const Text('Try Again'),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildEmptyState(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
+        padding: const EdgeInsets.all(24),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            SizedBox(
-              width: 140,
-              height: 140,
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  Container(
-                    width: 120,
-                    height: 120,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      gradient: RadialGradient(
-                        colors: [
-                          AppColors.accentSecondary.withValues(alpha: 0.1),
-                          Colors.transparent,
-                        ],
-                      ),
-                    ),
-                  ),
-                  Icon(
-                    Icons.assessment_outlined,
-                    size: 44,
-                    color: AppColors.accentSecondary.withValues(alpha: 0.6),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 24),
-            Text(
-              'Report not found',
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
-            ),
+            const Icon(Icons.error_outline, size: 48, color: AppColors.error),
+            const SizedBox(height: 16),
+            Text('Failed to load report', style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 8),
-            Text(
-              'This report may have been removed\nor is still processing',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: isDark
-                        ? AppColors.darkTextSecondary
-                        : AppColors.lightTextSecondary,
-                    height: 1.5,
-                  ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 28),
-            SizedBox(
-              width: 200,
-              height: 44,
-              child: ElevatedButton.icon(
-                onPressed: () => context.go('/dashboard'),
-                icon: const Icon(Icons.arrow_back, size: 18),
-                label: const Text('Back to Dashboard'),
-              ),
-            ),
+            Text(_error ?? '', style: Theme.of(context).textTheme.bodySmall, textAlign: TextAlign.center),
+            const SizedBox(height: 24),
+            RivlyButton(label: 'Retry', onPressed: _loadReport),
           ],
         ),
       ),
     );
   }
 
-  Color _scoreColor(int score) {
-    if (score >= 80) return AppColors.success;
-    if (score >= 60) return AppColors.accentPrimary;
-    if (score >= 40) return AppColors.warning;
-    return AppColors.error;
-  }
-}
-
-class _PriorityBadge extends StatelessWidget {
-  final String priority;
-  const _PriorityBadge({required this.priority});
-
-  @override
-  Widget build(BuildContext context) {
-    Color color;
-    switch (priority) {
-      case 'high':
-        color = AppColors.error;
-        break;
-      case 'medium':
-        color = AppColors.warning;
-        break;
-      default:
-        color = AppColors.success;
-    }
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.15),
-        borderRadius: BorderRadius.circular(4),
-      ),
-      child: Text(
-        priority.toUpperCase(),
-        style: TextStyle(
-          color: color,
-          fontSize: 10,
-          fontWeight: FontWeight.w700,
-        ),
+  Widget _buildEmpty(bool isDark) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.article_outlined, size: 64, color: isDark ? AppColors.darkTextMuted : AppColors.lightTextMuted),
+          const SizedBox(height: 16),
+          Text('No report data', style: Theme.of(context).textTheme.titleLarge),
+          const SizedBox(height: 24),
+          RivlyButton(label: 'Back to Dashboard', onPressed: () => context.go('/dashboard'), variant: RivlyButtonVariant.outline),
+        ],
       ),
     );
+  }
+
+  Widget _buildReport(bool isDark) {
+    final data = _runData!;
+    final status = data['status'] as String? ?? '';
+    final duration = data['duration_seconds'] as int?;
+    final reports = (data['reports'] as List<dynamic>?) ?? [];
+    final overallScores = (data['overall_scores'] as List<dynamic>?) ?? [];
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Status header
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              color: status == 'completed'
+                  ? AppColors.success.withValues(alpha: 0.08)
+                  : status == 'failed'
+                      ? AppColors.error.withValues(alpha: 0.08)
+                      : (isDark ? AppColors.darkBgSecondary : AppColors.lightBgSecondary),
+              border: Border.all(
+                color: status == 'completed'
+                    ? AppColors.success.withValues(alpha: 0.2)
+                    : status == 'failed'
+                        ? AppColors.error.withValues(alpha: 0.2)
+                        : (isDark ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.08)),
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  status == 'completed' ? Icons.check_circle : status == 'failed' ? Icons.error : Icons.hourglass_top,
+                  color: status == 'completed' ? AppColors.success : status == 'failed' ? AppColors.error : AppColors.accentPrimary,
+                  size: 28,
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        status == 'completed' ? 'Analysis Complete' : status == 'failed' ? 'Analysis Failed' : 'In Progress',
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700,
+                            color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary),
+                      ),
+                      if (duration != null)
+                        Text('Completed in ${_formatDuration(duration)}',
+                            style: TextStyle(fontSize: 13, color: isDark ? AppColors.darkTextMuted : AppColors.lightTextMuted)),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
+
+          // Overall scores
+          if (overallScores.isNotEmpty) ...[
+            Text('Competitor Scores', style: Theme.of(context).textTheme.titleLarge),
+            const SizedBox(height: 12),
+            ...overallScores.map((os) => _buildOverallScoreCard(os as Map<String, dynamic>, isDark)),
+            const SizedBox(height: 24),
+          ],
+
+          // Individual reports
+          if (reports.isNotEmpty) ...[
+            Text('Detailed Analysis', style: Theme.of(context).textTheme.titleLarge),
+            const SizedBox(height: 12),
+            ...reports.where((r) => (r as Map<String, dynamic>)['score'] > 0).map(
+                (r) => _buildReportCard(r as Map<String, dynamic>, isDark)),
+          ],
+
+          if (reports.isEmpty && overallScores.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 40),
+              child: Center(
+                child: Text('No analysis data available yet.',
+                    style: TextStyle(color: isDark ? AppColors.darkTextMuted : AppColors.lightTextMuted)),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildOverallScoreCard(Map<String, dynamic> os, bool isDark) {
+    final score = os['overall_score'] as int? ?? 0;
+    final delta = os['score_delta'] as int?;
+    final insights = (os['top_insights'] as List<dynamic>?) ?? [];
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        color: isDark ? AppColors.darkBgSecondary : AppColors.lightBgSecondary,
+        border: Border.all(color: isDark ? Colors.white.withValues(alpha: 0.06) : Colors.black.withValues(alpha: 0.06)),
+      ),
+      child: Row(
+        children: [
+          ScoreGauge(score: score, size: 72, strokeWidth: 6,
+              color: score >= 80 ? AppColors.success : score >= 60 ? AppColors.accentPrimary : AppColors.error),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text('UX Score: $score',
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700,
+                            color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary)),
+                    if (delta != null) ...[
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: (delta >= 0 ? AppColors.success : AppColors.error).withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          '${delta >= 0 ? "▲" : "▼"} ${delta.abs()}',
+                          style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600,
+                              color: delta >= 0 ? AppColors.success : AppColors.error),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+                const SizedBox(height: 6),
+                if (insights.isNotEmpty)
+                  Text(insights.first.toString(),
+                      style: TextStyle(fontSize: 12, color: isDark ? AppColors.darkTextMuted : AppColors.lightTextMuted),
+                      maxLines: 2, overflow: TextOverflow.ellipsis),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildReportCard(Map<String, dynamic> report, bool isDark) {
+    final category = report['category'] as String? ?? '';
+    final score = report['score'] as int? ?? 0;
+    final summary = report['summary'] as String? ?? '';
+    final recommendations = (report['recommendations'] as List<dynamic>?) ?? [];
+    final scoreBreakdown = report['score_breakdown'] as Map<String, dynamic>? ?? {};
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        color: isDark ? AppColors.darkBgSecondary : AppColors.lightBgSecondary,
+        border: Border.all(color: isDark ? Colors.white.withValues(alpha: 0.06) : Colors.black.withValues(alpha: 0.06)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: AppColors.accentSecondary.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(category.replaceAll('_', ' ').toUpperCase(),
+                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.accentSecondary)),
+              ),
+              const Spacer(),
+              Text('$score/100',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700,
+                      color: score >= 80 ? AppColors.success : score >= 60 ? AppColors.accentPrimary : AppColors.error)),
+            ],
+          ),
+          const SizedBox(height: 12),
+
+          // Summary
+          Text(summary, style: TextStyle(fontSize: 13, height: 1.5,
+              color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary)),
+
+          // Score breakdown
+          if (scoreBreakdown.isNotEmpty) ...[
+            const SizedBox(height: 14),
+            Wrap(
+              spacing: 8,
+              runSpacing: 6,
+              children: scoreBreakdown.entries.map((e) {
+                final val = e.value as int? ?? 0;
+                return Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(6),
+                    color: isDark ? Colors.white.withValues(alpha: 0.04) : Colors.black.withValues(alpha: 0.04),
+                  ),
+                  child: Text('${e.key.replaceAll('_', ' ')}: $val',
+                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500,
+                          color: isDark ? AppColors.darkTextMuted : AppColors.lightTextMuted)),
+                );
+              }).toList(),
+            ),
+          ],
+
+          // Recommendations
+          if (recommendations.isNotEmpty) ...[
+            const SizedBox(height: 14),
+            ...recommendations.take(3).map((r) {
+              final rec = r as Map<String, dynamic>;
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 6),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Icon(Icons.lightbulb_outline, size: 14, color: AppColors.accentPrimary),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(rec['action'] as String? ?? '',
+                          style: TextStyle(fontSize: 12, color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary)),
+                    ),
+                  ],
+                ),
+              );
+            }),
+          ],
+        ],
+      ),
+    );
+  }
+
+  String _formatDuration(int seconds) {
+    if (seconds < 60) return '${seconds}s';
+    final mins = seconds ~/ 60;
+    final secs = seconds % 60;
+    return '${mins}m ${secs}s';
   }
 }

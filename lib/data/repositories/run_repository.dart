@@ -1,7 +1,6 @@
 import '../../core/constants/api_constants.dart';
 import '../../core/network/dio_client.dart';
 import '../models/run_model.dart';
-import '../models/report_model.dart';
 
 class RunRepository {
   final DioClient _client = DioClient();
@@ -28,10 +27,9 @@ class RunRepository {
     return RunModel.fromJson(data);
   }
 
-  Future<ReportModel> getReport(String runId) async {
-    final response = await _client.get(ApiConstants.runReport(runId));
-    final data = response.data as Map<String, dynamic>;
-    return ReportModel.fromJson(data);
+  Future<Map<String, dynamic>> getRawRun(String id) async {
+    final response = await _client.get(ApiConstants.runDetail(id));
+    return response.data as Map<String, dynamic>;
   }
 
   Future<void> cancelRun(String id) async {
