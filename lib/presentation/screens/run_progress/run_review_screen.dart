@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/api_constants.dart';
+import '../../../core/l10n/app_localizations.dart';
 import '../../../core/network/dio_client.dart';
 import '../../../core/theme/colors.dart';
 import '../../../data/repositories/run_repository.dart';
@@ -104,9 +105,10 @@ class _RunReviewScreenState extends State<RunReviewScreen> {
 
     // Basic URL validation
     if (!url.startsWith('http://') && !url.startsWith('https://')) {
+      final l = AppLocalizations.of(context);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please enter a valid URL starting with http:// or https://'),
+        SnackBar(
+          content: Text(l.validUrlRequired),
           backgroundColor: AppColors.error,
         ),
       );
@@ -154,9 +156,10 @@ class _RunReviewScreenState extends State<RunReviewScreen> {
     final loginUrl = _authLoginUrlController.text.trim();
 
     if (email.isEmpty || password.isEmpty) {
+      final l = AppLocalizations.of(context);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please enter both email and password.'),
+        SnackBar(
+          content: Text(l.enterBothCredentials),
           backgroundColor: AppColors.warning,
         ),
       );
@@ -182,8 +185,8 @@ class _RunReviewScreenState extends State<RunReviewScreen> {
       _authLoginUrlController.clear();
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Authenticated pages are being re-captured.'),
+        SnackBar(
+          content: Text(AppLocalizations.of(context).authPagesRecaptured),
           backgroundColor: AppColors.success,
         ),
       );
@@ -202,9 +205,10 @@ class _RunReviewScreenState extends State<RunReviewScreen> {
 
   Future<void> _approveAndStart() async {
     if (_selectedCount == 0) {
+      final l = AppLocalizations.of(context);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Select at least one page to analyze.'),
+        SnackBar(
+          content: Text(l.selectAtLeastOnePage),
           backgroundColor: AppColors.warning,
         ),
       );
@@ -320,17 +324,17 @@ class _RunReviewScreenState extends State<RunReviewScreen> {
                         );
                       },
                       errorBuilder: (context, error, stackTrace) {
-                        return const SizedBox(
+                        return SizedBox(
                           height: 200,
                           child: Center(
                             child: Column(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(Icons.broken_image, size: 48, color: AppColors.darkTextMuted),
-                                SizedBox(height: 8),
+                                const Icon(Icons.broken_image, size: 48, color: AppColors.darkTextMuted),
+                                const SizedBox(height: 8),
                                 Text(
-                                  'Failed to load screenshot',
-                                  style: TextStyle(color: AppColors.darkTextMuted),
+                                  AppLocalizations.of(context).failedToLoadScreenshot,
+                                  style: const TextStyle(color: AppColors.darkTextMuted),
                                 ),
                               ],
                             ),
@@ -358,7 +362,7 @@ class _RunReviewScreenState extends State<RunReviewScreen> {
           icon: const Icon(Icons.arrow_back),
           onPressed: () => context.go('/runs/${widget.runId}'),
         ),
-        title: const Text('Review Pages'),
+        title: Text(AppLocalizations.of(context).reviewPages),
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -378,7 +382,7 @@ class _RunReviewScreenState extends State<RunReviewScreen> {
           Text(_error!),
           const SizedBox(height: 24),
           RivlyButton(
-            label: 'Retry',
+            label: AppLocalizations.of(context).retry,
             onPressed: _loadRunData,
             variant: RivlyButtonVariant.outline,
           ),
@@ -430,8 +434,6 @@ class _RunReviewScreenState extends State<RunReviewScreen> {
 
   Widget _buildHeaderCard(
       BuildContext context, bool isDark, int successCount, int totalCount) {
-    final siteName = _competitorName ?? 'the site';
-
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
@@ -472,14 +474,14 @@ class _RunReviewScreenState extends State<RunReviewScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'We found $totalCount pages',
+                      AppLocalizations.of(context).pagesFound(totalCount),
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                             fontWeight: FontWeight.w700,
                           ),
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      '$successCount captured successfully',
+                      AppLocalizations.of(context).pagesCaptured(successCount),
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                             color: AppColors.success,
                             fontWeight: FontWeight.w500,
@@ -492,9 +494,7 @@ class _RunReviewScreenState extends State<RunReviewScreen> {
           ),
           const SizedBox(height: 14),
           Text(
-            'Review the discovered pages on $siteName. '
-            'Uncheck any pages you want to exclude, or add custom URLs below. '
-            'Then start AI analysis.',
+            AppLocalizations.of(context).reviewInstructions,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: isDark
                       ? AppColors.darkTextSecondary
@@ -545,7 +545,7 @@ class _RunReviewScreenState extends State<RunReviewScreen> {
               const Icon(Icons.lock_outline, size: 20, color: AppColors.accentSecondary),
               const SizedBox(width: 8),
               Text(
-                '${authPages.length} page${authPages.length == 1 ? '' : 's'} require login',
+                AppLocalizations.of(context).pagesRequireLogin(authPages.length),
                 style: Theme.of(context).textTheme.titleSmall?.copyWith(
                       fontWeight: FontWeight.w700,
                     ),
@@ -554,8 +554,7 @@ class _RunReviewScreenState extends State<RunReviewScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            'These pages show a login form instead of content. '
-            'Provide credentials to capture the authenticated experience.',
+            AppLocalizations.of(context).authWallDescription,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: isDark
                       ? AppColors.darkTextSecondary
@@ -631,7 +630,7 @@ class _RunReviewScreenState extends State<RunReviewScreen> {
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 12),
                 child: Text(
-                  'Login Credentials',
+                  AppLocalizations.of(context).loginCredentials,
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
@@ -659,7 +658,7 @@ class _RunReviewScreenState extends State<RunReviewScreen> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'Credentials are used only for this analysis and are not shared with third parties.',
+                    AppLocalizations.of(context).credentialsPrivacy,
                     style: TextStyle(
                       fontSize: 12,
                       color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
@@ -675,7 +674,7 @@ class _RunReviewScreenState extends State<RunReviewScreen> {
 
           // Login URL field
           Text(
-            'Login URL (optional)',
+            AppLocalizations.of(context).loginUrl,
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w600,
@@ -699,7 +698,7 @@ class _RunReviewScreenState extends State<RunReviewScreen> {
 
           // Email field
           Text(
-            'Email / Username',
+            AppLocalizations.of(context).emailOrUsername,
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w600,
@@ -723,7 +722,7 @@ class _RunReviewScreenState extends State<RunReviewScreen> {
 
           // Password field
           Text(
-            'Password',
+            AppLocalizations.of(context).password,
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w600,
@@ -762,7 +761,7 @@ class _RunReviewScreenState extends State<RunReviewScreen> {
                     )
                   : const Icon(Icons.lock_open, size: 18),
               label: Text(
-                _isAuthCrawling ? 'Authenticating...' : 'Authenticate & Re-capture',
+                _isAuthCrawling ? AppLocalizations.of(context).authenticating : AppLocalizations.of(context).authenticateRecapture,
                 style: const TextStyle(fontWeight: FontWeight.w600),
               ),
               style: ElevatedButton.styleFrom(
@@ -780,7 +779,7 @@ class _RunReviewScreenState extends State<RunReviewScreen> {
           // Skip text
           Center(
             child: Text(
-              'Or skip \u2014 analysis will only cover publicly accessible pages.',
+              AppLocalizations.of(context).skipAuthNote,
               style: TextStyle(
                 fontSize: 12,
                 color: isDark ? AppColors.darkTextMuted : AppColors.lightTextMuted,
@@ -859,7 +858,7 @@ class _RunReviewScreenState extends State<RunReviewScreen> {
               ),
               const SizedBox(width: 8),
               Text(
-                'Add a custom page',
+                AppLocalizations.of(context).addCustomPage,
                 style: Theme.of(context).textTheme.titleSmall?.copyWith(
                       fontWeight: FontWeight.w600,
                     ),
@@ -868,7 +867,7 @@ class _RunReviewScreenState extends State<RunReviewScreen> {
           ),
           const SizedBox(height: 4),
           Text(
-            'Add a specific URL that wasn\'t discovered automatically.',
+            AppLocalizations.of(context).addCustomPageHint,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: isDark
                       ? AppColors.darkTextMuted
@@ -948,7 +947,7 @@ class _RunReviewScreenState extends State<RunReviewScreen> {
                                 AlwaysStoppedAnimation<Color>(Colors.white),
                           ),
                         )
-                      : const Text('Add', style: TextStyle(fontWeight: FontWeight.w600)),
+                      : Text(AppLocalizations.of(context).add, style: const TextStyle(fontWeight: FontWeight.w600)),
                 ),
               ),
             ],
@@ -989,14 +988,14 @@ class _RunReviewScreenState extends State<RunReviewScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    '$_selectedCount page${_selectedCount == 1 ? '' : 's'} selected',
+                    AppLocalizations.of(context).pagesSelected(_selectedCount),
                     style: Theme.of(context).textTheme.titleSmall?.copyWith(
                           fontWeight: FontWeight.w600,
                         ),
                   ),
                   if (_selectedCount == 0)
                     Text(
-                      'Select at least one page',
+                      AppLocalizations.of(context).selectAtLeastOne,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                             color: AppColors.error,
                             fontSize: 12,
@@ -1008,7 +1007,7 @@ class _RunReviewScreenState extends State<RunReviewScreen> {
             const SizedBox(width: 16),
             // Start Analysis button
             RivlyButton(
-              label: 'Start Analysis',
+              label: AppLocalizations.of(context).startAnalysis,
               onPressed: _selectedCount > 0 && !_isApproving
                   ? _approveAndStart
                   : null,
@@ -1242,6 +1241,7 @@ class _StatusBadge extends StatelessWidget {
     final String label;
     final IconData icon;
 
+    final l = AppLocalizations.of(context);
     switch (status) {
       case 'success':
         color = AppColors.success;
@@ -1249,7 +1249,7 @@ class _StatusBadge extends StatelessWidget {
         icon = Icons.check_circle_outline;
       case 'auth_required':
         color = AppColors.accentSecondary;
-        label = 'login required';
+        label = l.loginRequired;
         icon = Icons.lock_outline;
       case 'timeout':
         color = AppColors.warning;
@@ -1257,7 +1257,7 @@ class _StatusBadge extends StatelessWidget {
         icon = Icons.timer_off_outlined;
       case 'error':
         color = AppColors.error;
-        label = 'error';
+        label = l.error;
         icon = Icons.error_outline;
       default:
         color = AppColors.warning;

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/l10n/app_localizations.dart';
 import '../../../core/theme/colors.dart';
 import '../../../data/repositories/run_repository.dart';
 import '../../widgets/charts/score_gauge.dart';
@@ -36,13 +37,15 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => context.pop(),
         ),
-        title: const Text('Report Details'),
+        title: Text(l.reportDetails),
         actions: [
           IconButton(icon: const Icon(Icons.refresh), onPressed: _load),
         ],
@@ -52,6 +55,8 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
   }
 
   Widget _buildBody() {
+    final l = AppLocalizations.of(context);
+
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -66,7 +71,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
               const SizedBox(height: 16),
               Text(_error!, textAlign: TextAlign.center),
               const SizedBox(height: 16),
-              ElevatedButton(onPressed: _load, child: const Text('Retry')),
+              ElevatedButton(onPressed: _load, child: Text(l.retry)),
             ],
           ),
         ),
@@ -74,7 +79,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
     }
     final data = _data;
     if (data == null) {
-      return const Center(child: Text('No data'));
+      return Center(child: Text(l.noData));
     }
     return RefreshIndicator(
       onRefresh: _load,
@@ -117,7 +122,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
     }
   }
 
-  // ── 1. Status Header ────────────────────────────────────────────────
+  // -- 1. Status Header --
 
   Widget _buildStatusHeader(Map<String, dynamic> data) {
     final status = (data['status'] as String?) ?? 'unknown';
@@ -172,9 +177,10 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
     );
   }
 
-  // ── 2. Overall Scores ───────────────────────────────────────────────
+  // -- 2. Overall Scores --
 
   Widget _buildScores(Map<String, dynamic> data) {
+    final l = AppLocalizations.of(context);
     final overallScores = (data['overall_scores'] as List<dynamic>?) ?? [];
     if (overallScores.isEmpty) return const SizedBox.shrink();
 
@@ -185,7 +191,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _sectionTitle('Overall Scores'),
+        _sectionTitle(l.overallScores),
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: Row(
@@ -234,9 +240,10 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
     ];
   }
 
-  // ── 3. Executive Summary ────────────────────────────────────────────
+  // -- 3. Executive Summary --
 
   Widget _buildExecutiveSummary(Map<String, dynamic> data) {
+    final l = AppLocalizations.of(context);
     final comparison = data['comparison'] as Map<String, dynamic>?;
     if (comparison == null) return const SizedBox.shrink();
 
@@ -247,7 +254,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _sectionTitle('Executive Summary'),
+        _sectionTitle(l.executiveSummary),
         if (summary != null)
           RivlyCard(
             child: Text(summary, style: const TextStyle(fontSize: 14, height: 1.5)),
@@ -259,7 +266,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Competitive Position',
+                  l.competitivePosition,
                   style: TextStyle(
                     fontWeight: FontWeight.w600,
                     fontSize: 13,
@@ -277,9 +284,10 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
     );
   }
 
-  // ── 4. Screenshots ─────────────────────────────────────────────────
+  // -- 4. Screenshots --
 
   Widget _buildScreenshots(Map<String, dynamic> data) {
+    final l = AppLocalizations.of(context);
     final screenshots = (data['screenshots'] as List<dynamic>?) ?? [];
     if (screenshots.isEmpty) return const SizedBox.shrink();
 
@@ -295,7 +303,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _sectionTitle('Screenshots'),
+        _sectionTitle(l.screenshots),
 
         // Public pages
         if (publicPages.isNotEmpty) ...[
@@ -320,7 +328,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
                     Icon(Icons.lock_outline, size: 14, color: AppColors.accentSecondary),
                     const SizedBox(width: 4),
                     Text(
-                      'Authenticated Pages',
+                      l.authenticatedPages,
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
@@ -391,9 +399,10 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
     );
   }
 
-  // ── 5. Detailed Reports ─────────────────────────────────────────────
+  // -- 5. Detailed Reports --
 
   Widget _buildDetailedReports(Map<String, dynamic> data) {
+    final l = AppLocalizations.of(context);
     final reports = (data['reports'] as List<dynamic>?) ?? [];
     final scored = reports
         .whereType<Map<String, dynamic>>()
@@ -404,7 +413,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _sectionTitle('Detailed Reports'),
+        _sectionTitle(l.detailedReports),
         ...scored.map(_buildReportCard),
         const SizedBox(height: 16),
       ],
@@ -494,9 +503,10 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
     );
   }
 
-  // ── 6. Feature Matrix ───────────────────────────────────────────────
+  // -- 6. Feature Matrix --
 
   Widget _buildFeatureMatrix(Map<String, dynamic> data) {
+    final l = AppLocalizations.of(context);
     final comparison = data['comparison'] as Map<String, dynamic>?;
     if (comparison == null) return const SizedBox.shrink();
     final matrix = (comparison['feature_matrix'] as List<dynamic>?) ?? [];
@@ -505,7 +515,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _sectionTitle('Feature Matrix'),
+        _sectionTitle(l.featureMatrix),
         ...matrix.map((item) {
           final entry = (item as Map<String, dynamic>?) ?? {};
           final cat = (entry['category'] as String?) ?? 'Category';
@@ -536,9 +546,10 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
     );
   }
 
-  // ── 7. Recommendations ──────────────────────────────────────────────
+  // -- 7. Recommendations --
 
   Widget _buildRecommendations(Map<String, dynamic> data) {
+    final l = AppLocalizations.of(context);
     final comparison = data['comparison'] as Map<String, dynamic>?;
     if (comparison == null) return const SizedBox.shrink();
     final recs = (comparison['recommendations'] as List<dynamic>?) ?? [];
@@ -547,7 +558,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _sectionTitle('Recommendations'),
+        _sectionTitle(l.recommendations),
         ...recs.map((rec) {
           final entry = (rec as Map<String, dynamic>?) ?? {};
           final title = (entry['title'] ?? entry['recommendation'] ?? '').toString();
@@ -603,7 +614,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
     );
   }
 
-  // ── Helpers ─────────────────────────────────────────────────────────
+  // -- Helpers --
 
   Widget _sectionTitle(String title) {
     return Padding(

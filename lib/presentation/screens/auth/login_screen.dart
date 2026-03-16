@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/l10n/app_localizations.dart';
 import '../../../core/theme/colors.dart';
 import '../../../core/utils/validators.dart';
 import '../../../logic/auth/auth_cubit.dart';
@@ -38,6 +39,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+
     return Scaffold(
       body: BlocConsumer<AuthCubit, AuthState>(
         listener: (context, state) {
@@ -93,7 +96,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ),
                               ),
                               Text(
-                                'Rivly',
+                                l.appName,
                                 style: Theme.of(context)
                                     .textTheme
                                     .displayLarge
@@ -107,13 +110,13 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         const SizedBox(height: 12),
                         Text(
-                          'Competitive intelligence, automated.',
+                          l.competitiveIntelligence,
                           style: Theme.of(context).textTheme.bodyMedium,
                           textAlign: TextAlign.center,
                         ),
                         const SizedBox(height: 56),
                         Text(
-                          'Sign in',
+                          l.signIn,
                           style: Theme.of(context).textTheme.headlineMedium,
                         ),
                         const SizedBox(height: 28),
@@ -122,10 +125,10 @@ class _LoginScreenState extends State<LoginScreen> {
                           validator: Validators.email,
                           keyboardType: TextInputType.emailAddress,
                           textInputAction: TextInputAction.next,
-                          decoration: const InputDecoration(
-                            labelText: 'Email',
-                            hintText: 'you@company.com',
-                            prefixIcon: Icon(Icons.email_outlined),
+                          decoration: InputDecoration(
+                            labelText: l.email,
+                            hintText: l.emailHint,
+                            prefixIcon: const Icon(Icons.email_outlined),
                           ),
                         ),
                         const SizedBox(height: 16),
@@ -136,8 +139,8 @@ class _LoginScreenState extends State<LoginScreen> {
                           textInputAction: TextInputAction.done,
                           onFieldSubmitted: (_) => _handleLogin(),
                           decoration: InputDecoration(
-                            labelText: 'Password',
-                            hintText: 'Enter your password',
+                            labelText: l.password,
+                            hintText: l.enterPassword,
                             prefixIcon: const Icon(Icons.lock_outlined),
                             suffixIcon: IconButton(
                               icon: Icon(
@@ -155,18 +158,18 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         const SizedBox(height: 24),
                         RivlyButton(
-                          label: 'Sign In',
+                          label: l.signIn,
                           onPressed: _handleLogin,
                           isLoading: isLoading,
                           width: double.infinity,
                         ),
                         const SizedBox(height: 16),
                         RivlyButton(
-                          label: 'Continue with Google',
+                          label: l.continueWithGoogle,
                           onPressed: () {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Google sign-in coming soon'),
+                              SnackBar(
+                                content: Text(l.googleSignInComingSoon),
                               ),
                             );
                           },
@@ -179,13 +182,13 @@ class _LoginScreenState extends State<LoginScreen> {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Text(
-                              "Don't have an account? ",
+                              '${l.dontHaveAccount} ',
                               style: Theme.of(context).textTheme.bodyMedium,
                             ),
                             GestureDetector(
                               onTap: () => context.go('/register'),
                               child: Text(
-                                'Sign up',
+                                l.signUp,
                                 style: Theme.of(context)
                                     .textTheme
                                     .bodyMedium

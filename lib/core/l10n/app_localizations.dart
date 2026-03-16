@@ -247,6 +247,110 @@ class AppLocalizations {
   String get noDataYet =>
       _t('No analysis data available yet.', '\u0414\u0430\u043d\u043d\u044b\u0435 \u0430\u043d\u0430\u043b\u0438\u0437\u0430 \u043f\u043e\u043a\u0430 \u043d\u0435\u0434\u043e\u0441\u0442\u0443\u043f\u043d\u044b.');
 
+  // -- Additional Auth --
+  String get createYourAccount =>
+      _t('Create your account', 'Создайте аккаунт');
+  String get createAccount =>
+      _t('Create Account', 'Создать аккаунт');
+  String get chooseUsername =>
+      _t('Choose a username', 'Выберите имя пользователя');
+  String get emailHint => _t('you@company.com', 'you@company.com');
+  String get enterPassword =>
+      _t('Enter your password', 'Введите пароль');
+  String get minCharacters =>
+      _t('Min 8 characters', 'Минимум 8 символов');
+  String get googleSignInComingSoon =>
+      _t('Google sign-in coming soon', 'Вход через Google скоро');
+
+  // -- Additional Dashboard --
+  String get somethingWentWrong =>
+      _t('Something went wrong', 'Что-то пошло не так');
+  String get tryAgain => _t('Try Again', 'Попробовать снова');
+  String get switchLanguage =>
+      _t('Switch language', 'Сменить язык');
+  String get signOutTooltip => _t('Sign out', 'Выйти');
+  String get toggleTheme => _t('Toggle theme', 'Сменить тему');
+
+  // -- Additional Run Progress --
+  String get discoveryComplete =>
+      _t('Discovery complete', 'Обнаружение завершено');
+  String get reviewBeforeAnalysis => _t(
+      'Review the discovered pages before starting AI analysis.',
+      'Просмотрите найденные страницы перед запуском AI-анализа.');
+  String get runFailed => _t('Run Failed', 'Запуск не удался');
+  String get progress => _t('Progress', 'Прогресс');
+  String get running => _t('Running', 'Выполняется');
+  String get cancelRun => _t('Cancel run', 'Отменить запуск');
+  String completedInLabel(String duration) =>
+      _t('Completed in $duration', 'Завершён за $duration');
+
+  // -- Additional Report --
+  String get reportDetails =>
+      _t('Report Details', 'Детали отчёта');
+  String get overallScores =>
+      _t('Overall Scores', 'Общие оценки');
+  String get noData => _t('No data', 'Нет данных');
+  String get detailedReports =>
+      _t('Detailed Reports', 'Детальные отчёты');
+
+  // -- Additional Job Modal --
+  String get analysisLaunched =>
+      _t('Analysis launched!', 'Анализ запущен!');
+  String get analysisRunning => _t(
+      'Your competitive analysis is now running.',
+      'Ваш конкурентный анализ запущен.');
+  String get enterCompetitorUrl =>
+      _t('Enter competitor URLs manually', 'Введите URL конкурентов вручную');
+  String get processing => _t('Processing...', 'Обработка...');
+  String get analysis => _t('Analysis', 'Анализ');
+  String nSelected(int n) => _t('$n selected', '$n выбрано');
+  String get desktopAndMobile =>
+      _t('Desktop & Mobile', 'Десктоп и мобильный');
+  String get pleaseEnterUrl =>
+      _t('Please enter a URL', 'Пожалуйста, введите URL');
+  String get noCompetitorsSelected => _t(
+      'No competitors selected. Go back to add competitors.',
+      'Нет выбранных конкурентов. Вернитесь, чтобы добавить.');
+  String get failedToDiscoverCompetitors => _t(
+      'Failed to discover competitors. Try manual entry.',
+      'Не удалось найти конкурентов. Попробуйте вручную.');
+  String get checkingAccessibility =>
+      _t('Checking accessibility', 'Проверяем доступность');
+  String get capturingPages =>
+      _t('Capturing pages', 'Захватываем страницы');
+  String get approveDiscoveredPages =>
+      _t('Approve discovered pages', 'Одобрите найденные страницы');
+  String get claudeAnalyzing =>
+      _t('Claude analyzing', 'Анализ Claude');
+  String get calculatingScores =>
+      _t('Calculating UX scores', 'Подсчёт UX-оценок');
+  String get competitiveAnalysis =>
+      _t('Competitive analysis', 'Конкурентный анализ');
+  String get done2 => _t('done', 'готово');
+  String get running2 => _t('running', 'выполняется');
+  String get failed2 => _t('failed', 'ошибка');
+
+  // -- Review Screen additional --
+  String get failedToLoadScreenshot =>
+      _t('Failed to load screenshot', 'Не удалось загрузить скриншот');
+  String get selectAtLeastOnePage =>
+      _t('Select at least one page to analyze.', 'Выберите хотя бы одну страницу.');
+  String get validUrlRequired => _t(
+      'Please enter a valid URL starting with http:// or https://',
+      'Введите корректный URL, начинающийся с http:// или https://');
+  String get authPagesRecaptured => _t(
+      'Authenticated pages are being re-captured.',
+      'Авторизованные страницы перезахватываются.');
+  String get enterBothCredentials => _t(
+      'Please enter both email and password.',
+      'Введите email и пароль.');
+  String get productUrlStep =>
+      _t('Product URL', 'URL продукта');
+  String get enterProductUrl =>
+      _t('Enter your product URL to get started', 'Введите URL продукта для начала');
+  String get chooseCompetitiveLandscape =>
+      _t('Choose your competitive landscape', 'Выберите конкурентное окружение');
+
   // -- Settings --
   String get settings => _t('Settings', '\u041d\u0430\u0441\u0442\u0440\u043e\u0439\u043a\u0438');
   String get language => _t('Language', '\u042f\u0437\u044b\u043a');

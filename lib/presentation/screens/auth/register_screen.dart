@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/l10n/app_localizations.dart';
 import '../../../core/theme/colors.dart';
 import '../../../core/utils/validators.dart';
 import '../../../logic/auth/auth_cubit.dart';
@@ -41,6 +42,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+
     return Scaffold(
       body: BlocConsumer<AuthCubit, AuthState>(
         listener: (context, state) {
@@ -71,7 +74,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         Text(
-                          'Rivly',
+                          l.appName,
                           style: Theme.of(context)
                               .textTheme
                               .displayLarge
@@ -82,13 +85,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         ),
                         const SizedBox(height: 12),
                         Text(
-                          'Create your account',
+                          l.createYourAccount,
                           style: Theme.of(context).textTheme.bodyMedium,
                           textAlign: TextAlign.center,
                         ),
                         const SizedBox(height: 56),
                         Text(
-                          'Sign up',
+                          l.signUp,
                           style: Theme.of(context).textTheme.headlineMedium,
                         ),
                         const SizedBox(height: 28),
@@ -97,10 +100,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           validator: Validators.email,
                           keyboardType: TextInputType.emailAddress,
                           textInputAction: TextInputAction.next,
-                          decoration: const InputDecoration(
-                            labelText: 'Email',
-                            hintText: 'you@company.com',
-                            prefixIcon: Icon(Icons.email_outlined),
+                          decoration: InputDecoration(
+                            labelText: l.email,
+                            hintText: l.emailHint,
+                            prefixIcon: const Icon(Icons.email_outlined),
                           ),
                         ),
                         const SizedBox(height: 16),
@@ -108,10 +111,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           controller: _usernameController,
                           validator: Validators.username,
                           textInputAction: TextInputAction.next,
-                          decoration: const InputDecoration(
-                            labelText: 'Username',
-                            hintText: 'Choose a username',
-                            prefixIcon: Icon(Icons.person_outlined),
+                          decoration: InputDecoration(
+                            labelText: l.username,
+                            hintText: l.chooseUsername,
+                            prefixIcon: const Icon(Icons.person_outlined),
                           ),
                         ),
                         const SizedBox(height: 16),
@@ -122,8 +125,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           textInputAction: TextInputAction.done,
                           onFieldSubmitted: (_) => _handleRegister(),
                           decoration: InputDecoration(
-                            labelText: 'Password',
-                            hintText: 'Min 8 characters',
+                            labelText: l.password,
+                            hintText: l.minCharacters,
                             prefixIcon: const Icon(Icons.lock_outlined),
                             suffixIcon: IconButton(
                               icon: Icon(
@@ -141,7 +144,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         ),
                         const SizedBox(height: 24),
                         RivlyButton(
-                          label: 'Create Account',
+                          label: l.createAccount,
                           onPressed: _handleRegister,
                           isLoading: isLoading,
                           width: double.infinity,
@@ -151,13 +154,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Text(
-                              'Already have an account? ',
+                              '${l.alreadyHaveAccount} ',
                               style: Theme.of(context).textTheme.bodyMedium,
                             ),
                             GestureDetector(
                               onTap: () => context.go('/login'),
                               child: Text(
-                                'Sign in',
+                                l.signIn,
                                 style: Theme.of(context)
                                     .textTheme
                                     .bodyMedium

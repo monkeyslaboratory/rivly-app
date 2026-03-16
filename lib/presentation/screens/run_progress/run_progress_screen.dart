@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/l10n/app_localizations.dart';
 import '../../../core/theme/colors.dart';
 import '../../../logic/run_progress/run_progress_cubit.dart';
 import '../../../logic/run_progress/run_progress_state.dart';
@@ -28,6 +29,7 @@ class _RunProgressBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final l = AppLocalizations.of(context);
 
     return Scaffold(
       appBar: AppBar(
@@ -35,7 +37,7 @@ class _RunProgressBody extends StatelessWidget {
           icon: const Icon(Icons.arrow_back),
           onPressed: () => context.go('/dashboard'),
         ),
-        title: const Text('Run Progress'),
+        title: Text(l.runProgress),
         actions: [
           BlocBuilder<RunProgressCubit, RunProgressState>(
             builder: (context, state) {
@@ -44,7 +46,7 @@ class _RunProgressBody extends StatelessWidget {
                   icon: const Icon(Icons.stop_circle_outlined),
                   onPressed: () =>
                       context.read<RunProgressCubit>().cancelRun(),
-                  tooltip: 'Cancel run',
+                  tooltip: l.cancelRun,
                 );
               }
               return const SizedBox.shrink();
@@ -68,7 +70,7 @@ class _RunProgressBody extends StatelessWidget {
                   Text(state.error!),
                   const SizedBox(height: 24),
                   RivlyButton(
-                    label: 'Back to Dashboard',
+                    label: l.backToDashboard,
                     onPressed: () => context.go('/dashboard'),
                     variant: RivlyButtonVariant.outline,
                   ),
@@ -143,14 +145,14 @@ class _RunProgressBody extends StatelessWidget {
                         const Icon(Icons.pageview_rounded, size: 32, color: AppColors.warning),
                         const SizedBox(height: 8),
                         Text(
-                          'Discovery complete',
+                          l.discoveryComplete,
                           style: Theme.of(context).textTheme.titleMedium?.copyWith(
                                 fontWeight: FontWeight.w600,
                               ),
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          'Review the discovered pages before starting AI analysis.',
+                          l.reviewBeforeAnalysis,
                           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                                 color: isDark
                                     ? AppColors.darkTextSecondary
@@ -160,7 +162,7 @@ class _RunProgressBody extends StatelessWidget {
                         ),
                         const SizedBox(height: 16),
                         RivlyButton(
-                          label: 'Review Discovered Pages',
+                          label: l.reviewDiscoveredPages,
                           onPressed: () => context.go('/runs/${state.run!.id}/review'),
                           width: double.infinity,
                           icon: Icons.arrow_forward,
@@ -171,7 +173,7 @@ class _RunProgressBody extends StatelessWidget {
                 ],
                 if (state.isCompleted)
                   RivlyButton(
-                    label: 'View Report',
+                    label: l.viewReport,
                     onPressed: () {
                       context.go('/reports/${state.run!.id}');
                     },
@@ -180,7 +182,7 @@ class _RunProgressBody extends StatelessWidget {
                   ),
                 if (state.isFailed)
                   RivlyButton(
-                    label: 'Back to Dashboard',
+                    label: l.backToDashboard,
                     onPressed: () => context.go('/dashboard'),
                     variant: RivlyButtonVariant.outline,
                     width: double.infinity,
@@ -197,21 +199,22 @@ class _RunProgressBody extends StatelessWidget {
   // Progress ring
   // ---------------------------------------------------------------------------
   Widget _buildProgressRing(BuildContext context, RunProgressState state) {
+    final l = AppLocalizations.of(context);
     final Color ringColor;
     final String ringLabel;
 
     if (state.isFailed) {
       ringColor = AppColors.error;
-      ringLabel = 'Failed';
+      ringLabel = l.failed;
     } else if (state.isCompleted) {
       ringColor = AppColors.success;
-      ringLabel = 'Complete';
+      ringLabel = l.complete;
     } else if (state.needsApproval) {
       ringColor = AppColors.warning;
-      ringLabel = 'Review Required';
+      ringLabel = l.reviewRequired;
     } else {
       ringColor = AppColors.accentPrimary;
-      ringLabel = 'Running';
+      ringLabel = l.running;
     }
 
     return ScoreGauge(
@@ -235,8 +238,31 @@ class _RunProgressBody extends StatelessWidget {
     _PhaseInfo('comparing', 'Comparison', 'Competitive analysis'),
   ];
 
+  // Localized phase labels
+  static String _localizedPhaseLabel(AppLocalizations l, String key) {
+    switch (key) {
+      case 'preflight': return l.preflight;
+      case 'screenshots': return l.screenshots;
+      case 'discovered': return l.review;
+      case 'analyzing': return l.aiAnalysis;
+      case 'scoring': return l.scoring;
+      case 'comparing': return l.comparison;
+      default: return key;
+    }
+  }
+
+  static String _localizedTrailing(AppLocalizations l, String trailing) {
+    switch (trailing) {
+      case 'done': return l.done2;
+      case 'running': return l.running2;
+      case 'failed': return l.failed2;
+      default: return trailing;
+    }
+  }
+
   Widget _buildPhaseTimeline(
       BuildContext context, RunProgressState state, bool isDark) {
+    final l = AppLocalizations.of(context);
     final currentPhase = state.run?.currentPhase ?? '';
     final phaseOrder = _phases.map((p) => p.key).toList();
     final currentIdx = phaseOrder.indexOf(currentPhase);
@@ -288,14 +314,14 @@ class _RunProgressBody extends StatelessWidget {
             phaseStatus = _PhaseStatus.pending;
           }
 
-          return _buildPhaseRow(context, phase, phaseStatus, isDark,
+          return _buildPhaseRow(context, l, phase, phaseStatus, isDark,
               isLast: i == _phases.length - 1);
         }),
       ),
     );
   }
 
-  Widget _buildPhaseRow(BuildContext context, _PhaseInfo phase,
+  Widget _buildPhaseRow(BuildContext context, AppLocalizations l, _PhaseInfo phase,
       _PhaseStatus status, bool isDark,
       {bool isLast = false}) {
     final IconData icon;
@@ -339,7 +365,7 @@ class _RunProgressBody extends StatelessWidget {
             const SizedBox(width: 12),
             Expanded(
               child: Text(
-                phase.label,
+                _localizedPhaseLabel(l, phase.key),
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: fontWeight,
@@ -349,7 +375,7 @@ class _RunProgressBody extends StatelessWidget {
             ),
             if (trailing.isNotEmpty)
               Text(
-                trailing,
+                _localizedTrailing(l, trailing),
                 style: TextStyle(
                   fontSize: 12,
                   color: status == _PhaseStatus.active
@@ -392,6 +418,7 @@ class _RunProgressBody extends StatelessWidget {
   // ---------------------------------------------------------------------------
   Widget _buildLinearProgress(
       BuildContext context, RunProgressState state, bool isDark) {
+    final l = AppLocalizations.of(context);
     final progressColor = state.isFailed
         ? AppColors.error
         : state.isCompleted
@@ -417,7 +444,7 @@ class _RunProgressBody extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Progress',
+                l.progress,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       fontWeight: FontWeight.w600,
                       color: isDark
@@ -456,6 +483,7 @@ class _RunProgressBody extends StatelessWidget {
   // ---------------------------------------------------------------------------
   Widget _buildErrorCard(
       BuildContext context, RunProgressState state, bool isDark) {
+    final l = AppLocalizations.of(context);
     final errorText = state.run?.errorLog.isNotEmpty == true
         ? state.run!.errorLog
         : 'An unknown error occurred.';
@@ -477,9 +505,9 @@ class _RunProgressBody extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Run Failed',
-                  style: TextStyle(
+                Text(
+                  l.runFailed,
+                  style: const TextStyle(
                     fontWeight: FontWeight.w600,
                     color: AppColors.error,
                     fontSize: 14,
@@ -508,8 +536,9 @@ class _RunProgressBody extends StatelessWidget {
   // ---------------------------------------------------------------------------
   Widget _buildDurationBadge(
       BuildContext context, RunProgressState state, bool isDark) {
+    final l = AppLocalizations.of(context);
     final secs = state.run!.durationSeconds!;
-    final label = secs < 60
+    final durationLabel = secs < 60
         ? '${secs}s'
         : '${(secs / 60).floor()}m ${secs % 60}s';
 
@@ -525,7 +554,7 @@ class _RunProgressBody extends StatelessWidget {
           const Icon(Icons.timer_outlined, size: 16, color: AppColors.success),
           const SizedBox(width: 6),
           Text(
-            'Completed in $label',
+            l.completedInLabel(durationLabel),
             style: const TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w600,

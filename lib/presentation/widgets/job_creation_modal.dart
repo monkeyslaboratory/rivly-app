@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../core/l10n/app_localizations.dart';
 import '../../core/theme/colors.dart';
 import '../../core/network/dio_client.dart';
 import '../../core/constants/api_constants.dart';
@@ -234,22 +235,22 @@ class _JobCreationModalState extends State<JobCreationModal>
   String _deviceMode = 'desktop';
 
   // ---- Step titles ----
-  static const _stepTitles = [
-    'Product URL',
-    'Competitors',
-    'Access Check',
-    'Schedule',
-    'Device',
-    'Review & Launch',
+  List<String> _stepTitles(AppLocalizations l) => [
+    l.productUrlStep,
+    l.competitorsStep,
+    l.accessCheck,
+    l.schedule,
+    l.device,
+    l.reviewLaunch,
   ];
 
-  static const _stepSubtitles = [
-    'Enter your product URL to get started',
-    'Choose your competitive landscape',
-    'Verifying competitor accessibility',
-    'Set your analysis cadence',
-    'Choose target devices',
-    'Confirm and launch your analysis',
+  List<String> _stepSubtitles(AppLocalizations l) => [
+    l.enterProductUrl,
+    l.chooseCompetitiveLandscape,
+    l.verifyingAccess,
+    l.setAnalysisCadence,
+    l.chooseDevices,
+    l.confirmLaunch,
   ];
 
   @override
@@ -585,7 +586,7 @@ class _JobCreationModalState extends State<JobCreationModal>
           ),
           const SizedBox(height: 20),
           Text(
-            'Analysis launched!',
+            AppLocalizations.of(context).analysisLaunched,
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.w700,
@@ -594,7 +595,7 @@ class _JobCreationModalState extends State<JobCreationModal>
           ),
           const SizedBox(height: 8),
           Text(
-            'Your competitive analysis is now running.',
+            AppLocalizations.of(context).analysisRunning,
             style: TextStyle(
               fontSize: 14,
               color: isDark ? AppColors.darkTextMuted : AppColors.lightTextMuted,
@@ -622,7 +623,7 @@ class _JobCreationModalState extends State<JobCreationModal>
             const SizedBox(height: 8),
             // Step title + subtitle
             Text(
-              _stepTitles[_currentStep - 1],
+              _stepTitles(AppLocalizations.of(context))[_currentStep - 1],
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
@@ -631,7 +632,7 @@ class _JobCreationModalState extends State<JobCreationModal>
             ),
             const SizedBox(height: 4),
             Text(
-              _stepSubtitles[_currentStep - 1],
+              _stepSubtitles(AppLocalizations.of(context))[_currentStep - 1],
               style: TextStyle(
                 fontSize: 13,
                 color: isDark ? AppColors.darkTextMuted : AppColors.lightTextMuted,
@@ -676,7 +677,7 @@ class _JobCreationModalState extends State<JobCreationModal>
         ),
         const SizedBox(width: 12),
         Text(
-          'New Analysis',
+          AppLocalizations.of(context).newAnalysis,
           style: Theme.of(context).textTheme.titleLarge?.copyWith(
                 fontWeight: FontWeight.w700,
               ),
@@ -872,8 +873,8 @@ class _JobCreationModalState extends State<JobCreationModal>
                   ),
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                 ),
-                child: const Text('Analyze',
-                    style: TextStyle(fontWeight: FontWeight.w600)),
+                child: Text(AppLocalizations.of(context).analyze,
+                    style: const TextStyle(fontWeight: FontWeight.w600)),
               ),
             ),
           ],
@@ -1012,7 +1013,7 @@ class _JobCreationModalState extends State<JobCreationModal>
                 borderRadius: BorderRadius.circular(8),
               ),
             ),
-            child: const Text('Edit', style: TextStyle(fontSize: 13)),
+            child: Text(AppLocalizations.of(context).edit, style: const TextStyle(fontSize: 13)),
           ),
         ],
       ),
@@ -1050,7 +1051,7 @@ class _JobCreationModalState extends State<JobCreationModal>
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
-                  'Find competitors with AI',
+                  AppLocalizations.of(context).findWithAi,
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
@@ -1086,7 +1087,7 @@ class _JobCreationModalState extends State<JobCreationModal>
               child: OutlinedButton.icon(
                 onPressed: _discoverCompetitors,
                 icon: const Icon(Icons.search, size: 18),
-                label: const Text('Discover Competitors'),
+                label: Text(AppLocalizations.of(context).discoverCompetitors),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: AppColors.accentSecondary,
                   side: const BorderSide(color: AppColors.accentSecondary),
@@ -1235,7 +1236,7 @@ class _JobCreationModalState extends State<JobCreationModal>
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 16),
             child: Text(
-              'No competitors selected. Go back to add competitors.',
+              AppLocalizations.of(context).noCompetitorsSelected,
               style: TextStyle(
                 fontSize: 14,
                 color: isDark ? AppColors.darkTextMuted : AppColors.lightTextMuted,
@@ -1313,7 +1314,7 @@ class _JobCreationModalState extends State<JobCreationModal>
                   _next();
                 },
                 child: Text(
-                  'Skip',
+                  AppLocalizations.of(context).skip,
                   style: TextStyle(
                     color: isDark
                         ? AppColors.darkTextMuted
@@ -1352,15 +1353,16 @@ class _JobCreationModalState extends State<JobCreationModal>
   }
 
   String _accessLabel(String status) {
+    final l = AppLocalizations.of(context);
     switch (status) {
       case 'accessible':
-        return 'Accessible';
+        return l.accessible;
       case 'blocked':
-        return 'Blocked';
+        return l.blocked;
       case 'geo_restricted':
-        return 'Geo-restricted';
+        return l.geoRestricted;
       default:
-        return 'Checking...';
+        return l.checking;
     }
   }
 
@@ -1390,13 +1392,13 @@ class _JobCreationModalState extends State<JobCreationModal>
 
         // Day-of-week picker for weekly / biweekly
         if (_scheduleType == 'weekly' || _scheduleType == 'biweekly') ...[
-          _buildFieldLabel('Day of week', isDark),
+          _buildFieldLabel(AppLocalizations.of(context).dayOfWeek, isDark),
           const SizedBox(height: 8),
           Wrap(
             spacing: 6,
             runSpacing: 6,
             children: List.generate(7, (i) {
-              final labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+              final labels = AppLocalizations.of(context).weekDays;
               final isSelected = _scheduleDayOfWeek == i;
               return ChoiceChip(
                 label: Text(
@@ -1439,7 +1441,7 @@ class _JobCreationModalState extends State<JobCreationModal>
 
         // Day-of-month picker for monthly
         if (_scheduleType == 'monthly') ...[
-          _buildFieldLabel('Day of month', isDark),
+          _buildFieldLabel(AppLocalizations.of(context).dayOfMonth, isDark),
           const SizedBox(height: 8),
           Wrap(
             spacing: 4,
@@ -1485,7 +1487,7 @@ class _JobCreationModalState extends State<JobCreationModal>
 
         // Time picker
         if (_scheduleType != 'once') ...[
-          _buildFieldLabel('Time', isDark),
+          _buildFieldLabel(AppLocalizations.of(context).time, isDark),
           const SizedBox(height: 8),
           GestureDetector(
             onTap: () async {
@@ -1538,11 +1540,12 @@ class _JobCreationModalState extends State<JobCreationModal>
   }
 
   List<Widget> _buildScheduleRadios(bool isDark, Color borderColor) {
-    const options = [
-      ('once', 'One-time', 'Run the analysis once'),
-      ('weekly', 'Weekly', 'Repeat every week'),
-      ('biweekly', 'Bi-weekly', 'Repeat every two weeks'),
-      ('monthly', 'Monthly', 'Repeat every month'),
+    final l = AppLocalizations.of(context);
+    final options = [
+      ('once', l.oneTime, l.runOnce),
+      ('weekly', l.weekly, l.repeatWeekly),
+      ('biweekly', l.biweekly, l.repeatBiweekly),
+      ('monthly', l.monthly, l.repeatMonthly),
     ];
 
     return options.map((opt) {
@@ -1620,13 +1623,14 @@ class _JobCreationModalState extends State<JobCreationModal>
   // STEP 6 – Device
   // ==================================================================
   Widget _buildStep6(bool isDark, Color borderColor) {
-    const devices = [
-      ('desktop', Icons.desktop_windows_outlined, 'Desktop only',
-          'Standard desktop viewport'),
-      ('mobile', Icons.phone_iphone_outlined, 'Mobile only',
-          'Mobile viewport (375px)'),
-      ('both', Icons.devices_outlined, 'Both',
-          'Desktop & mobile viewports'),
+    final l = AppLocalizations.of(context);
+    final devices = [
+      ('desktop', Icons.desktop_windows_outlined, l.desktopOnly,
+          l.desktopViewport),
+      ('mobile', Icons.phone_iphone_outlined, l.mobileOnly,
+          l.mobileViewport),
+      ('both', Icons.devices_outlined, l.both,
+          l.bothViewports),
     ];
 
     return Column(
@@ -1723,15 +1727,20 @@ class _JobCreationModalState extends State<JobCreationModal>
   // STEP 7 – Review & Launch
   // ==================================================================
   Widget _buildStep7(bool isDark, Color borderColor) {
+    final l = AppLocalizations.of(context);
     final selectedCompetitors = _getSelectedCompetitors();
     final scheduleLabel = _scheduleType == 'once'
-        ? 'One-time'
-        : _scheduleType[0].toUpperCase() + _scheduleType.substring(1);
+        ? l.oneTime
+        : _scheduleType == 'weekly'
+            ? l.weekly
+            : _scheduleType == 'biweekly'
+                ? l.biweekly
+                : l.monthly;
     final deviceLabel = _deviceMode == 'both'
-        ? 'Desktop & Mobile'
+        ? l.desktopAndMobile
         : _deviceMode == 'desktop'
-            ? 'Desktop only'
-            : 'Mobile only';
+            ? l.desktopOnly
+            : l.mobileOnly;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1752,7 +1761,7 @@ class _JobCreationModalState extends State<JobCreationModal>
               _buildSummaryRow(
                 isDark,
                 icon: Icons.link,
-                label: 'Product',
+                label: l.product,
                 value: _productName ?? _extractDomain(_productUrl ?? ''),
                 subtitle: _extractDomain(_productUrl ?? ''),
               ),
@@ -1760,28 +1769,28 @@ class _JobCreationModalState extends State<JobCreationModal>
               _buildSummaryRow(
                 isDark,
                 icon: Icons.people_outline,
-                label: 'Competitors',
-                value: '${selectedCompetitors.length} selected',
+                label: l.competitorsStep,
+                value: l.nSelected(selectedCompetitors.length),
               ),
               _buildSummaryDivider(borderColor),
               _buildSummaryRow(
                 isDark,
                 icon: Icons.analytics_outlined,
-                label: 'Analysis',
-                value: 'Full auto-analysis',
+                label: l.analysis,
+                value: l.fullAutoAnalysis,
               ),
               _buildSummaryDivider(borderColor),
               _buildSummaryRow(
                 isDark,
                 icon: Icons.schedule,
-                label: 'Schedule',
+                label: l.schedule,
                 value: scheduleLabel,
               ),
               _buildSummaryDivider(borderColor),
               _buildSummaryRow(
                 isDark,
                 icon: Icons.devices,
-                label: 'Device',
+                label: l.device,
                 value: deviceLabel,
               ),
             ],
@@ -1818,14 +1827,14 @@ class _JobCreationModalState extends State<JobCreationModal>
                             ),
                           ),
                         )
-                      : const Row(
+                      : Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.rocket_launch_outlined, size: 18),
-                            SizedBox(width: 8),
+                            const Icon(Icons.rocket_launch_outlined, size: 18),
+                            const SizedBox(width: 8),
                             Text(
-                              'Launch Analysis',
-                              style: TextStyle(fontWeight: FontWeight.w600),
+                              l.launchAnalysis,
+                              style: const TextStyle(fontWeight: FontWeight.w600),
                             ),
                           ],
                         ),
@@ -1956,12 +1965,12 @@ class _JobCreationModalState extends State<JobCreationModal>
           ),
           padding: const EdgeInsets.symmetric(horizontal: 20),
         ),
-        child: const Row(
+        child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.arrow_back_ios_new, size: 14),
-            SizedBox(width: 6),
-            Text('Back', style: TextStyle(fontWeight: FontWeight.w500)),
+            const Icon(Icons.arrow_back_ios_new, size: 14),
+            const SizedBox(width: 6),
+            Text(AppLocalizations.of(context).back, style: const TextStyle(fontWeight: FontWeight.w500)),
           ],
         ),
       ),
@@ -1980,12 +1989,12 @@ class _JobCreationModalState extends State<JobCreationModal>
             borderRadius: BorderRadius.circular(10),
           ),
         ),
-        child: const Row(
+        child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text('Continue', style: TextStyle(fontWeight: FontWeight.w600)),
-            SizedBox(width: 6),
-            Icon(Icons.arrow_forward_ios, size: 14),
+            Text(AppLocalizations.of(context).next, style: const TextStyle(fontWeight: FontWeight.w600)),
+            const SizedBox(width: 6),
+            const Icon(Icons.arrow_forward_ios, size: 14),
           ],
         ),
       ),

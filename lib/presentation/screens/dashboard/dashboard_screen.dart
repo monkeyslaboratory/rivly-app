@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import '../../../core/l10n/app_localizations.dart';
 import '../../../core/theme/colors.dart';
 import '../../../logic/auth/auth_cubit.dart';
 import '../../../logic/dashboard/dashboard_cubit.dart';
@@ -37,10 +38,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'Rivly',
+          l.appName,
           style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                 fontWeight: FontWeight.w800,
               ),
@@ -48,14 +51,32 @@ class _DashboardScreenState extends State<DashboardScreen> {
         actions: [
           BlocBuilder<ThemeCubit, ThemeState>(
             builder: (context, themeState) {
-              return IconButton(
-                icon: Icon(
-                  themeState.isDark
-                      ? Icons.light_mode_outlined
-                      : Icons.dark_mode_outlined,
-                ),
-                onPressed: () => context.read<ThemeCubit>().toggleTheme(),
-                tooltip: 'Toggle theme',
+              return Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    icon: Text(
+                      themeState.locale.languageCode.toUpperCase(),
+                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+                    ),
+                    onPressed: () {
+                      final newLocale = themeState.locale.languageCode == 'en'
+                          ? const Locale('ru')
+                          : const Locale('en');
+                      context.read<ThemeCubit>().setLocale(newLocale);
+                    },
+                    tooltip: l.switchLanguage,
+                  ),
+                  IconButton(
+                    icon: Icon(
+                      themeState.isDark
+                          ? Icons.light_mode_outlined
+                          : Icons.dark_mode_outlined,
+                    ),
+                    onPressed: () => context.read<ThemeCubit>().toggleTheme(),
+                    tooltip: l.toggleTheme,
+                  ),
+                ],
               );
             },
           ),
@@ -65,7 +86,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               context.read<AuthCubit>().logout();
               context.go('/login');
             },
-            tooltip: 'Sign out',
+            tooltip: l.signOut,
           ),
         ],
       ),
@@ -90,7 +111,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               padding: const EdgeInsets.all(16),
               children: [
                 Text(
-                  'Your Jobs',
+                  l.yourJobs,
                   style: Theme.of(context).textTheme.headlineSmall,
                 ),
                 const SizedBox(height: 12),
@@ -138,7 +159,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               ),
                               const SizedBox(width: 4),
                               Text(
-                                '${job.competitors.length} competitors',
+                                l.competitors(job.competitors.length),
                                 style: Theme.of(context).textTheme.bodySmall,
                               ),
                               const SizedBox(width: 16),
@@ -171,7 +192,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                       .read<DashboardCubit>()
                                       .triggerRun(job.id),
                                   icon: const Icon(Icons.play_arrow, size: 18),
-                                  label: const Text('Run'),
+                                  label: Text(l.run),
                                 ),
                               ),
                               const SizedBox(width: 8),
@@ -189,7 +210,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 if (state.recentRuns.isNotEmpty) ...[
                   const SizedBox(height: 24),
                   Text(
-                    'Recent Runs',
+                    l.recentRuns,
                     style: Theme.of(context).textTheme.headlineSmall,
                   ),
                   const SizedBox(height: 12),
@@ -210,7 +231,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    'Run ${run.id.substring(0, 8)}',
+                                    '${l.run} ${run.id.substring(0, 8)}',
                                     style: Theme.of(context)
                                         .textTheme
                                         .titleMedium,
@@ -242,12 +263,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _openCreateModal,
         icon: const Icon(Icons.add),
-        label: const Text('New Job'),
+        label: Text(l.newJob),
       ),
     );
   }
 
   Widget _buildEmptyState(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Center(
@@ -323,7 +345,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
             // Heading
             Text(
-              'No analyses yet',
+              l.noAnalysesYet,
               style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                     fontWeight: FontWeight.w800,
                     letterSpacing: -0.5,
@@ -333,7 +355,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
             // Subtext
             Text(
-              'Set up your first competitor analysis\nin under 2 minutes',
+              l.setUpFirstAnalysis,
               style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                     color: isDark
                         ? AppColors.darkTextSecondary
@@ -353,7 +375,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Text('Create First Analysis'),
+                    Text(l.createFirstAnalysis),
                     const SizedBox(width: 8),
                     const Icon(Icons.arrow_forward, size: 18),
                   ],
@@ -364,7 +386,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
             // Plan info
             Text(
-              'Free plan includes 1 job with 2 competitors',
+              l.freePlanInfo,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: isDark
                         ? AppColors.darkTextMuted
@@ -378,6 +400,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildErrorState(BuildContext context, String error) {
+    final l = AppLocalizations.of(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Center(
@@ -418,7 +441,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
               const SizedBox(height: 20),
               Text(
-                'Something went wrong',
+                l.somethingWentWrong,
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.w700,
                     ),
@@ -441,7 +464,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   onPressed: () =>
                       context.read<DashboardCubit>().loadDashboard(),
                   icon: const Icon(Icons.refresh, size: 18),
-                  label: const Text('Try Again'),
+                  label: Text(l.tryAgain),
                 ),
               ),
             ],
@@ -452,15 +475,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   void _confirmDelete(BuildContext context, String jobId, String jobName) {
+    final l = AppLocalizations.of(context);
+
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Delete Job'),
-        content: Text('Are you sure you want to delete "$jobName"?'),
+        title: Text(l.deleteJob),
+        content: Text('${l.confirmDelete} "$jobName"?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
+            child: Text(l.cancel),
           ),
           TextButton(
             onPressed: () {
@@ -468,7 +493,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               context.read<DashboardCubit>().deleteJob(jobId);
             },
             style: TextButton.styleFrom(foregroundColor: AppColors.error),
-            child: const Text('Delete'),
+            child: Text(l.delete),
           ),
         ],
       ),
