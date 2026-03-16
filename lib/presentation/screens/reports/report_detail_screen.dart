@@ -15,7 +15,7 @@ class ReportDetailScreen extends StatefulWidget {
 }
 
 class _ReportDetailScreenState extends State<ReportDetailScreen>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   final RunRepository _runRepository = RunRepository();
   Map<String, dynamic>? _runData;
   bool _isLoading = true;
