@@ -65,8 +65,9 @@ class JobRepository {
     await _client.delete(ApiConstants.jobDetail(id));
   }
 
-  Future<void> triggerRun(String jobId) async {
-    await _client.post(ApiConstants.jobRun(jobId));
+  Future<Map<String, dynamic>> triggerRun(String jobId) async {
+    final response = await _client.post(ApiConstants.jobRun(jobId));
+    return response.data as Map<String, dynamic>;
   }
 
   Future<Map<String, dynamic>> analyzeProduct(String url) async {

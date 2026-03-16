@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import '../../core/theme/colors.dart';
 import '../../core/network/dio_client.dart';
 import '../../core/constants/api_constants.dart';
@@ -205,7 +206,7 @@ class _JobCreationModalState extends State<JobCreationModal>
   String? _errorMessage;
 
   // ---- Success state ----
-  bool _showSuccess = false;
+  final bool _showSuccess = false;
   late AnimationController _successController;
   late Animation<double> _successScale;
 
@@ -539,20 +540,14 @@ class _JobCreationModalState extends State<JobCreationModal>
         }
       }
 
-      _jobRepository.triggerRun(job.id).catchError((_) {});
+      final runResponse = await _jobRepository.triggerRun(job.id);
 
       if (!mounted) return;
 
-      setState(() {
-        _isProcessing = false;
-        _showSuccess = true;
-      });
-      _successController.forward();
-
-      await Future<void>.delayed(const Duration(milliseconds: 1500));
-      if (!mounted) return;
+      final runId = runResponse['id'] as String;
       Navigator.of(context).pop();
       widget.onJobCreated?.call();
+      GoRouter.of(context).go('/runs/$runId');
     } catch (e) {
       if (!mounted) return;
       setState(() {
