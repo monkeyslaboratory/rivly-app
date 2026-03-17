@@ -3,17 +3,23 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:go_router/go_router.dart';
 import 'core/l10n/app_localizations.dart';
-import 'core/theme/app_theme.dart';
+import 'core/theme/pulse_theme.dart';
 import 'logic/auth/auth_cubit.dart';
 import 'logic/auth/auth_state.dart';
 import 'logic/dashboard/dashboard_cubit.dart';
+import 'logic/insights/insights_cubit.dart';
+import 'logic/sidebar/sidebar_cubit.dart';
 import 'logic/theme/theme_cubit.dart';
 import 'logic/theme/theme_state.dart';
 import 'presentation/screens/auth/auth_screen.dart';
 import 'presentation/screens/dashboard/dashboard_screen.dart';
+import 'presentation/screens/insights/insights_screen.dart';
+import 'presentation/screens/jobs/jobs_screen.dart';
+import 'presentation/screens/reports/report_detail_screen.dart';
+import 'presentation/screens/settings/settings_screen.dart';
 import 'presentation/screens/run_progress/run_progress_screen.dart';
 import 'presentation/screens/run_progress/run_review_screen.dart';
-import 'presentation/screens/reports/report_detail_screen.dart';
+import 'presentation/screens/shell/app_shell.dart';
 
 class RivlyApp extends StatefulWidget {
   const RivlyApp({super.key});
@@ -26,6 +32,8 @@ class _RivlyAppState extends State<RivlyApp> {
   late final AuthCubit _authCubit;
   late final ThemeCubit _themeCubit;
   late final DashboardCubit _dashboardCubit;
+  late final InsightsCubit _insightsCubit;
+  late final SidebarCubit _sidebarCubit;
   late final GoRouter _router;
 
   @override
@@ -34,6 +42,8 @@ class _RivlyAppState extends State<RivlyApp> {
     _authCubit = AuthCubit()..checkAuth();
     _themeCubit = ThemeCubit();
     _dashboardCubit = DashboardCubit();
+    _insightsCubit = InsightsCubit();
+    _sidebarCubit = SidebarCubit();
 
     _router = GoRouter(
       initialLocation: '/login',
@@ -59,6 +69,7 @@ class _RivlyAppState extends State<RivlyApp> {
         return null;
       },
       routes: [
+        // Auth routes — outside the shell
         GoRoute(
           path: '/login',
           builder: (context, state) => const AuthScreen(),
@@ -67,30 +78,49 @@ class _RivlyAppState extends State<RivlyApp> {
           path: '/register',
           builder: (context, state) => const AuthScreen(isRegister: true),
         ),
-        GoRoute(
-          path: '/dashboard',
-          builder: (context, state) => const DashboardScreen(),
-        ),
-        GoRoute(
-          path: '/runs/:id',
-          builder: (context, state) {
-            final runId = state.pathParameters['id']!;
-            return RunProgressScreen(runId: runId);
-          },
-        ),
-        GoRoute(
-          path: '/runs/:id/review',
-          builder: (context, state) {
-            final runId = state.pathParameters['id']!;
-            return RunReviewScreen(runId: runId);
-          },
-        ),
-        GoRoute(
-          path: '/reports/:id',
-          builder: (context, state) {
-            final runId = state.pathParameters['id']!;
-            return ReportDetailScreen(runId: runId);
-          },
+
+        // Authenticated routes — inside the shell
+        ShellRoute(
+          builder: (context, state, child) => AppShell(child: child),
+          routes: [
+            GoRoute(
+              path: '/dashboard',
+              builder: (context, state) => const DashboardScreen(),
+            ),
+            GoRoute(
+              path: '/jobs',
+              builder: (context, state) => const JobsScreen(),
+            ),
+            GoRoute(
+              path: '/insights',
+              builder: (context, state) => const InsightsScreen(),
+            ),
+            GoRoute(
+              path: '/settings',
+              builder: (context, state) => const SettingsScreen(),
+            ),
+            GoRoute(
+              path: '/runs/:id',
+              builder: (context, state) {
+                final runId = state.pathParameters['id']!;
+                return RunProgressScreen(runId: runId);
+              },
+            ),
+            GoRoute(
+              path: '/runs/:id/review',
+              builder: (context, state) {
+                final runId = state.pathParameters['id']!;
+                return RunReviewScreen(runId: runId);
+              },
+            ),
+            GoRoute(
+              path: '/reports/:id',
+              builder: (context, state) {
+                final runId = state.pathParameters['id']!;
+                return ReportDetailScreen(runId: runId);
+              },
+            ),
+          ],
         ),
       ],
     );
@@ -101,6 +131,8 @@ class _RivlyAppState extends State<RivlyApp> {
     _authCubit.close();
     _themeCubit.close();
     _dashboardCubit.close();
+    _insightsCubit.close();
+    _sidebarCubit.close();
     _router.dispose();
     super.dispose();
   }
@@ -111,15 +143,17 @@ class _RivlyAppState extends State<RivlyApp> {
       providers: [
         BlocProvider.value(value: _authCubit),
         BlocProvider.value(value: _themeCubit),
+        BlocProvider.value(value: _sidebarCubit),
         BlocProvider.value(value: _dashboardCubit),
+        BlocProvider.value(value: _insightsCubit),
       ],
       child: BlocBuilder<ThemeCubit, ThemeState>(
         builder: (context, themeState) {
           return MaterialApp.router(
             title: 'Rivly',
             debugShowCheckedModeBanner: false,
-            theme: AppTheme.lightTheme,
-            darkTheme: AppTheme.darkTheme,
+            theme: PulseTheme.light(),
+            darkTheme: PulseTheme.dark(),
             themeMode: themeState.themeMode,
             locale: themeState.locale,
             localizationsDelegates: const [

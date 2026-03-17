@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../../core/l10n/app_localizations.dart';
 import '../../../core/theme/colors.dart';
 import '../../../data/repositories/run_repository.dart';
@@ -86,13 +87,12 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
       child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          _safeSection('Status', () => _buildStatusHeader(data)),
-          _safeSection('Scores', () => _buildScores(data)),
-          _safeSection('Summary', () => _buildExecutiveSummary(data)),
-          _safeSection('Screenshots', () => _buildScreenshots(data)),
-          _safeSection('Reports', () => _buildDetailedReports(data)),
-          _safeSection('Feature Matrix', () => _buildFeatureMatrix(data)),
-          _safeSection('Recommendations', () => _buildRecommendations(data)),
+          _safeSection(l.statusLabel, () => _buildStatusHeader(data)),
+          _safeSection(l.scoresLabel, () => _buildScores(data)),
+          _safeSection(l.summaryLabel, () => _buildExecutiveSummary(data)),
+          _safeSection(l.pageReports, () => _buildPageReportCards(data)),
+          _safeSection(l.featureMatrixLabel, () => _buildFeatureMatrix(data)),
+          _safeSection(l.recommendationsLabel, () => _buildRecommendations(data)),
           const SizedBox(height: 32),
         ],
       ),
@@ -101,6 +101,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
 
   /// Wraps each section builder in try-catch so one crash doesn't kill the page.
   Widget _safeSection(String name, Widget Function() builder) {
+    final l = AppLocalizations.of(context);
     try {
       return builder();
     } catch (e) {
@@ -112,7 +113,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
             const SizedBox(width: 8),
             Expanded(
               child: Text(
-                'Failed to render $name section',
+                l.failedToRenderSection(name),
                 style: const TextStyle(fontSize: 13),
               ),
             ),
@@ -284,221 +285,455 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
     );
   }
 
-  // -- 4. Screenshots --
+  // -- 4. Page Report Cards (screenshot + analysis side by side) --
 
-  Widget _buildScreenshots(Map<String, dynamic> data) {
-    final l = AppLocalizations.of(context);
-    final screenshots = (data['screenshots'] as List<dynamic>?) ?? [];
-    if (screenshots.isEmpty) return const SizedBox.shrink();
-
-    final publicPages = screenshots
-        .whereType<Map<String, dynamic>>()
-        .where((s) => !((s['page_name'] as String?) ?? '').contains('_authenticated'))
-        .toList();
-    final authPages = screenshots
-        .whereType<Map<String, dynamic>>()
-        .where((s) => ((s['page_name'] as String?) ?? '').contains('_authenticated'))
-        .toList();
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _sectionTitle(l.screenshots),
-
-        // Public pages
-        if (publicPages.isNotEmpty) ...[
-          _buildScreenshotList(publicPages),
-        ],
-
-        // Authenticated pages divider + list
-        if (authPages.isNotEmpty) ...[
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: Divider(
-                  color: AppColors.accentSecondary.withValues(alpha: 0.3),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 10),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.lock_outline, size: 14, color: AppColors.accentSecondary),
-                    const SizedBox(width: 4),
-                    Text(
-                      l.authenticatedPages,
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.accentSecondary,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Expanded(
-                child: Divider(
-                  color: AppColors.accentSecondary.withValues(alpha: 0.3),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          _buildScreenshotList(authPages),
-        ],
-
-        const SizedBox(height: 16),
-      ],
-    );
-  }
-
-  Widget _buildScreenshotList(List<Map<String, dynamic>> screenshots) {
-    return SizedBox(
-      height: 160,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        itemCount: screenshots.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 8),
-        itemBuilder: (context, i) {
-          final shot = screenshots[i];
-          final shotId = shot['id']?.toString() ?? '';
-          final pageName = (shot['page_name'] as String?) ?? '';
-          final device = (shot['device_type'] as String?) ?? '';
-          final url = 'http://localhost:8000/api/v1/runs/screenshots/$shotId/';
-
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: Image.network(
-                  url,
-                  width: 200,
-                  height: 130,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => Container(
-                    width: 200,
-                    height: 130,
-                    color: Theme.of(context).dividerColor,
-                    child: const Icon(Icons.broken_image, size: 32),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                '$pageName ($device)',
-                style: const TextStyle(fontSize: 11),
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
-          );
-        },
-      ),
-    );
-  }
-
-  // -- 5. Detailed Reports --
-
-  Widget _buildDetailedReports(Map<String, dynamic> data) {
+  Widget _buildPageReportCards(Map<String, dynamic> data) {
     final l = AppLocalizations.of(context);
     final reports = (data['reports'] as List<dynamic>?) ?? [];
+    final screenshots = (data['screenshots'] as List<dynamic>?) ?? [];
+
     final scored = reports
         .whereType<Map<String, dynamic>>()
         .where((r) => ((r['score'] as num?)?.toInt() ?? 0) > 0)
         .toList();
     if (scored.isEmpty) return const SizedBox.shrink();
 
+    // Build a lookup: page_name -> screenshot
+    final screenshotMap = <String, Map<String, dynamic>>{};
+    for (final s in screenshots.whereType<Map<String, dynamic>>()) {
+      final pageName = (s['page_name'] as String?) ?? '';
+      if (pageName.isNotEmpty) {
+        screenshotMap[pageName] = s;
+      }
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _sectionTitle(l.detailedReports),
-        ...scored.map(_buildReportCard),
+        ...scored.map((report) => _buildPageCard(report, screenshotMap)),
         const SizedBox(height: 16),
       ],
     );
   }
 
-  Widget _buildReportCard(Map<String, dynamic> report) {
-    final category = (report['category'] as String?) ?? 'Unknown';
+  Widget _buildPageCard(
+    Map<String, dynamic> report,
+    Map<String, Map<String, dynamic>> screenshotMap,
+  ) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final l = AppLocalizations.of(context);
+    final category = (report['category'] as String?) ?? l.unknown;
     final score = (report['score'] as num?)?.toInt() ?? 0;
     final summary = (report['summary'] as String?) ?? '';
     final breakdown = (report['score_breakdown'] as Map<String, dynamic>?) ?? {};
     final recs = (report['recommendations'] as List<dynamic>?) ?? [];
+    final findings = (report['key_findings'] as List<dynamic>?) ?? [];
 
-    return RivlyCard(
-      margin: const EdgeInsets.only(bottom: 8),
+    // Find matching screenshot
+    final screenshot = screenshotMap[category];
+    final screenshotId = screenshot?['id']?.toString();
+    final screenshotUrl = screenshotId != null
+        ? 'http://localhost:8000/api/v1/runs/screenshots/$screenshotId/'
+        : null;
+
+    final scoreColor = _scoreColor(score);
+
+    final borderColor = isDark ? AppColors.darkBorder : AppColors.lightBorder;
+    final bgColor = isDark ? AppColors.darkBgElevated : AppColors.lightBgElevated;
+    final textSecondary = isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary;
+    final textMuted = isDark ? AppColors.darkTextMuted : AppColors.lightTextMuted;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: borderColor),
+      ),
+      clipBehavior: Clip.antiAlias,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header row
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: AppColors.accentSecondary.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  _formatLabel(category),
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.accentSecondary,
+          // -- Card header: page name + score --
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              border: Border(bottom: BorderSide(color: borderColor)),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.description_outlined, size: 18, color: textSecondary),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    _formatLabel(category),
+                    style: GoogleFonts.inter(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
-              ),
-              const Spacer(),
-              ScoreGauge(score: score, size: 48, strokeWidth: 4),
-            ],
+                // Score badge
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: scoreColor.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: scoreColor.withValues(alpha: 0.3)),
+                  ),
+                  child: Text(
+                    '$score/100',
+                    style: GoogleFonts.inter(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: scoreColor,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
-          if (summary.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            Text(summary, style: const TextStyle(fontSize: 13, height: 1.4)),
-          ],
-          // Score breakdown chips
-          if (breakdown.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 6,
-              runSpacing: 4,
-              children: breakdown.entries.map((e) {
-                final val = (e.value as num?)?.toInt() ?? 0;
-                return Chip(
-                  label: Text('${_formatLabel(e.key)}: $val'),
-                  labelStyle: const TextStyle(fontSize: 11),
-                  padding: EdgeInsets.zero,
-                  visualDensity: VisualDensity.compact,
+
+          // -- Main content: screenshot + analysis --
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final isWide = constraints.maxWidth >= 600;
+
+                final screenshotWidget = screenshotUrl != null
+                    ? _buildScreenshotPane(screenshotUrl, borderColor)
+                    : null;
+
+                final analysisWidget = _buildAnalysisPane(
+                  summary: summary,
+                  findings: findings,
+                  breakdown: breakdown,
+                  textSecondary: textSecondary,
+                  textMuted: textMuted,
+                  scoreColor: scoreColor,
                 );
-              }).toList(),
+
+                if (isWide && screenshotWidget != null) {
+                  // Side by side: 40% screenshot, 60% analysis
+                  return Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SizedBox(
+                        width: constraints.maxWidth * 0.38,
+                        child: screenshotWidget,
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(child: analysisWidget),
+                    ],
+                  );
+                } else {
+                  // Stacked: screenshot on top, analysis below
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (screenshotWidget != null) ...[
+                        screenshotWidget,
+                        const SizedBox(height: 16),
+                      ],
+                      analysisWidget,
+                    ],
+                  );
+                }
+              },
+            ),
+          ),
+
+          // -- Recommendations footer --
+          if (recs.isNotEmpty) ...[
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: isDark
+                    ? AppColors.darkBgSubtle.withValues(alpha: 0.5)
+                    : AppColors.lightBgSubtle,
+                border: Border(top: BorderSide(color: borderColor)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    l.recommendations,
+                    style: GoogleFonts.inter(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: textSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  ...recs.asMap().entries.take(5).map((entry) {
+                    final idx = entry.key + 1;
+                    final rec = entry.value;
+                    String text;
+                    String? impact;
+                    String? effort;
+
+                    if (rec is Map) {
+                      text = (rec['text'] ?? rec['title'] ?? rec['recommendation'] ?? rec.toString()).toString();
+                      impact = (rec['impact'] as String?) ?? (rec['priority'] as String?);
+                      effort = rec['effort'] as String?;
+                    } else {
+                      text = rec.toString();
+                    }
+
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 6),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          SizedBox(
+                            width: 22,
+                            child: Text(
+                              '$idx.',
+                              style: GoogleFonts.inter(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: textMuted,
+                              ),
+                            ),
+                          ),
+                          Expanded(
+                            child: Wrap(
+                              crossAxisAlignment: WrapCrossAlignment.center,
+                              children: [
+                                Text(
+                                  text,
+                                  style: GoogleFonts.inter(fontSize: 12, height: 1.4),
+                                ),
+                                if (impact != null) ...[
+                                  const SizedBox(width: 6),
+                                  _buildChip(
+                                    l.impactLabel(_capitalize(impact)),
+                                    _impactColor(impact),
+                                  ),
+                                ],
+                                if (effort != null) ...[
+                                  const SizedBox(width: 4),
+                                  _buildChip(
+                                    l.effortLabel(_capitalize(effort)),
+                                    textMuted,
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }),
+                ],
+              ),
             ),
           ],
-          // Top 3 recommendations
-          if (recs.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            ...recs.take(3).map((rec) {
-              final text = rec is String ? rec : (rec is Map ? (rec['text'] ?? rec['title'] ?? rec.toString()) : rec.toString());
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 4),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Icon(Icons.lightbulb_outline, size: 16, color: AppColors.warning),
-                    const SizedBox(width: 6),
-                    Expanded(
-                      child: Text(
-                        text.toString(),
-                        style: const TextStyle(fontSize: 12, height: 1.3),
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            }),
-          ],
         ],
+      ),
+    );
+  }
+
+  Widget _buildScreenshotPane(String url, Color borderColor) {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: borderColor),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Image.network(
+        url,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => Container(
+          height: 200,
+          color: Theme.of(context).dividerColor,
+          child: Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.broken_image, size: 32, color: Theme.of(context).disabledColor),
+                const SizedBox(height: 4),
+                Text(
+                  'Screenshot unavailable',
+                  style: GoogleFonts.inter(fontSize: 11, color: Theme.of(context).disabledColor),
+                ),
+              ],
+            ),
+          ),
+        ),
+        loadingBuilder: (context, child, loadingProgress) {
+          if (loadingProgress == null) return child;
+          return Container(
+            height: 200,
+            color: Theme.of(context).dividerColor.withValues(alpha: 0.3),
+            child: const Center(
+              child: SizedBox(
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildAnalysisPane({
+    required String summary,
+    required List<dynamic> findings,
+    required Map<String, dynamic> breakdown,
+    required Color textSecondary,
+    required Color textMuted,
+    required Color scoreColor,
+  }) {
+    final l = AppLocalizations.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Summary
+        if (summary.isNotEmpty) ...[
+          Text(
+            l.summarySection,
+            style: GoogleFonts.inter(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: textSecondary,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            summary,
+            style: GoogleFonts.inter(fontSize: 13, height: 1.5),
+          ),
+          const SizedBox(height: 12),
+        ],
+
+        // Key Findings
+        if (findings.isNotEmpty) ...[
+          Text(
+            l.keyFindings,
+            style: GoogleFonts.inter(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: textSecondary,
+            ),
+          ),
+          const SizedBox(height: 4),
+          ...findings.take(5).map((f) {
+            final text = f is String ? f : (f is Map ? (f['text'] ?? f['finding'] ?? f.toString()) : f.toString());
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 3),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('\u2022 ', style: GoogleFonts.inter(fontSize: 13, color: textMuted)),
+                  Expanded(
+                    child: Text(
+                      text.toString(),
+                      style: GoogleFonts.inter(fontSize: 12, height: 1.4),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }),
+          const SizedBox(height: 12),
+        ],
+
+        // Score Breakdown
+        if (breakdown.isNotEmpty) ...[
+          Text(
+            l.scoreBreakdown,
+            style: GoogleFonts.inter(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: textSecondary,
+            ),
+          ),
+          const SizedBox(height: 6),
+          ...breakdown.entries.map((e) {
+            final val = (e.value as num?)?.toInt() ?? 0;
+            final barColor = _scoreColor(val);
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 6),
+              child: Row(
+                children: [
+                  SizedBox(
+                    width: 100,
+                    child: Text(
+                      _formatLabel(e.key),
+                      style: GoogleFonts.inter(fontSize: 12, color: textSecondary),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        return Stack(
+                          children: [
+                            Container(
+                              height: 6,
+                              decoration: BoxDecoration(
+                                color: barColor.withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(3),
+                              ),
+                            ),
+                            Container(
+                              height: 6,
+                              width: constraints.maxWidth * (val / 100.0).clamp(0.0, 1.0),
+                              decoration: BoxDecoration(
+                                color: barColor,
+                                borderRadius: BorderRadius.circular(3),
+                              ),
+                            ),
+                          ],
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  SizedBox(
+                    width: 28,
+                    child: Text(
+                      '$val',
+                      style: GoogleFonts.inter(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: barColor,
+                      ),
+                      textAlign: TextAlign.right,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildChip(String label, Color color) {
+    return Container(
+      margin: const EdgeInsets.only(top: 2, bottom: 2),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(4),
+        border: Border.all(color: color.withValues(alpha: 0.25)),
+      ),
+      child: Text(
+        label,
+        style: GoogleFonts.inter(
+          fontSize: 10,
+          fontWeight: FontWeight.w500,
+          color: color,
+        ),
       ),
     );
   }
@@ -621,7 +856,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
       padding: const EdgeInsets.only(bottom: 8, top: 4),
       child: Text(
         title,
-        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+        style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w700),
       ),
     );
   }
@@ -632,5 +867,26 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
         .split(' ')
         .map((w) => w.isEmpty ? '' : '${w[0].toUpperCase()}${w.substring(1)}')
         .join(' ');
+  }
+
+  Color _scoreColor(int score) {
+    if (score >= 80) return AppColors.success;
+    if (score >= 60) return AppColors.accentPrimary;
+    if (score >= 40) return AppColors.warning;
+    return AppColors.error;
+  }
+
+  Color _impactColor(String impact) {
+    return switch (impact.toLowerCase()) {
+      'high' || 'critical' => AppColors.error,
+      'medium' => AppColors.warning,
+      'low' => AppColors.success,
+      _ => AppColors.accentSecondary,
+    };
+  }
+
+  String _capitalize(String s) {
+    if (s.isEmpty) return s;
+    return '${s[0].toUpperCase()}${s.substring(1).toLowerCase()}';
   }
 }

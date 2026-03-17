@@ -364,12 +364,118 @@ class AppLocalizations {
   String get recrawlingPages =>
       _t('Re-capturing authenticated pages...', 'Перезахватываем авторизованные страницы...');
 
+  // -- Sidebar --
+  String get jobs => _t('Jobs', 'Задачи');
+  String get insights => _t('Insights', 'Инсайты');
+
+  // -- Dashboard KPIs --
+  String get totalJobs => _t('Total Jobs', 'Всего задач');
+  String get activeRuns => _t('Active Runs', 'Активных запусков');
+  String get avgScore => _t('Avg Score', 'Средняя оценка');
+  String get nextRun => _t('Next Run', 'Следующий запуск');
+  String get manual => _t('Manual', 'Вручную');
+  String get overviewSubtitle =>
+      _t('Overview of your competitive intelligence', 'Обзор конкурентной разведки');
+  String get viewAllJobs => _t('View All Jobs', 'Все задачи');
+
+  // -- Jobs --
+  String get manageJobs =>
+      _t('Manage your competitive analysis jobs', 'Управление задачами конкурентного анализа');
+
+  // -- Insights --
+  String get noInsightsYet => _t('No insights yet', 'Инсайтов пока нет');
+  String get runFirstAnalysis =>
+      _t('Complete your first analysis to see actionable recommendations',
+          'Завершите первый анализ для получения рекомендаций');
+  String get insightsSubtitle =>
+      _t('Actionable recommendations from your analyses',
+          'Рекомендации на основе анализов');
+  String get critical => _t('Critical', 'Критический');
+  String get high => _t('High', 'Высокий');
+  String get medium2 => _t('Medium', 'Средний');
+  String get low => _t('Low', 'Низкий');
+  String get impact => _t('Impact', 'Влияние');
+  String get effort => _t('Effort', 'Трудозатраты');
+  String get fromAnalysis => _t('From', 'Из');
+
   // -- Settings --
   String get settings => _t('Settings', '\u041d\u0430\u0441\u0442\u0440\u043e\u0439\u043a\u0438');
+  String get profile => _t('Profile', 'Профиль');
+  String get systemTheme => _t('System theme', 'Системная тема');
   String get language => _t('Language', '\u042f\u0437\u044b\u043a');
   String get theme => _t('Theme', '\u0422\u0435\u043c\u0430');
   String get darkMode => _t('Dark mode', '\u0422\u0451\u043c\u043d\u0430\u044f \u0442\u0435\u043c\u0430');
   String get lightMode => _t('Light mode', '\u0421\u0432\u0435\u0442\u043b\u0430\u044f \u0442\u0435\u043c\u0430');
+
+  // -- Run Progress additional --
+  String get currentActivity =>
+      _t('Current Activity', 'Текущая активность');
+  String capturedPages(int n) =>
+      _t('Captured Pages ($n)', 'Захваченные страницы ($n)');
+  String get unknown => _t('Unknown', 'Неизвестно');
+  String get unknownError =>
+      _t('An unknown error occurred.', 'Произошла неизвестная ошибка.');
+
+  // -- Report additional --
+  String get overall => _t('Overall', 'Общий');
+  String failedToRenderSection(String name) =>
+      _t('Failed to render $name section', 'Не удалось отобразить раздел $name');
+  String get statusLabel => _t('Status', 'Статус');
+  String get scoresLabel => _t('Scores', 'Оценки');
+  String get summaryLabel => _t('Summary', 'Итоги');
+  String get screenshotsLabel => _t('Screenshots', 'Скриншоты');
+  String get reportsLabel => _t('Reports', 'Отчёты');
+  String get featureMatrixLabel => _t('Feature Matrix', 'Матрица фич');
+  String get recommendationsLabel => _t('Recommendations', 'Рекомендации');
+  String get category => _t('Category', 'Категория');
+  String get screenshotUnavailable =>
+      _t('Screenshot unavailable', 'Скриншот недоступен');
+  String get summarySection => _t('Summary', 'Резюме');
+  String get keyFindings => _t('Key Findings', 'Ключевые выводы');
+  String get scoreBreakdown => _t('Score Breakdown', 'Разбивка оценок');
+  String get pageReports => _t('Page Reports', 'Отчёты по страницам');
+  String impactLabel(String value) =>
+      _t('Impact: $value', 'Влияние: $value');
+  String effortLabel(String value) =>
+      _t('Effort: $value', 'Трудозатраты: $value');
+
+  // -- Sidebar additional --
+  String get logout => _t('Logout', 'Выйти');
+  String get user => _t('User', 'Пользователь');
+
+  // -- Dashboard status labels --
+  String get scheduleLabel => _t('Schedule', 'Расписание');
+  String runLabel(String id) => _t('Run $id', 'Запуск $id');
+
+  // -- Dashboard redesign --
+  String get competitorsLabel => _t('Competitors', 'Конкуренты');
+  String get recentActivity => _t('Recent activity', 'Последняя активность');
+  String get improvementOpportunities =>
+      _t('Improvement Opportunities', 'Возможности для улучшения');
+  String get addCompetitor => _t('Add competitor', 'Добавить конкурента');
+  String get viewReportAction => _t('View report', 'Посмотреть отчёт');
+  String get lastReport => _t('Last report', 'Последний отчёт');
+  String get noReportsYet => _t('No reports', 'Нет отчётов');
+  String get today => _t('Today', 'Сегодня');
+  String get yesterday => _t('Yesterday', 'Вчера');
+  String get earlier => _t('Earlier', 'Ранее');
+  String get all => _t('All', 'Все');
+  String runStartedFor(String jobName) =>
+      _t('Run started for $jobName', 'Запуск начат для $jobName');
+  String get analysisCompleted2 =>
+      _t('Analysis completed', 'Анализ завершён');
+  String get runFailed2 => _t('Run failed', 'Запуск не удался');
+
+  // -- Jobs additional --
+  String get noJobsYet => _t('No jobs yet', 'Задач пока нет');
+  String get createFirstJob =>
+      _t('Create your first analysis job to get started',
+          'Создайте первую задачу анализа для начала');
+  String get createFirstJobButton =>
+      _t('Create your first analysis job',
+          'Создать первую задачу анализа');
+  String competitorsCount(int n) =>
+      _t('$n competitors', '$n конкурентов');
 
   // -- Days --
   List<String> get weekDays => isRussian

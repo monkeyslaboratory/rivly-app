@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+/// Legacy color palette — kept for backward compatibility with existing screens.
+/// New screens should use [PulseColors] from `tokens/colors.dart` instead.
 class AppColors {
   // Brand
   static const accentPrimary = Color(0xFFFF6B2C);
@@ -8,23 +10,25 @@ class AppColors {
   static const accentSecondary = Color(0xFF6366F1);
   static const accentSecondaryLight = Color(0xFF818CF8);
 
-  // Dark theme
-  static const darkBg = Color(0xFF050505);
-  static const darkBgSecondary = Color(0xFF0A0A0A);
-  static const darkBgElevated = Color(0xFF111111);
-  static const darkBgSubtle = Color(0xFF1A1A1A);
+  // Dark theme — Zinc palette
+  static const darkBg = Color(0xFF09090B);
+  static const darkBgSecondary = Color(0xFF111111);
+  static const darkBgElevated = Color(0xFF18181B);
+  static const darkBgSubtle = Color(0xFF27272A);
   static const darkTextPrimary = Color(0xFFFAFAFA);
-  static const darkTextSecondary = Color(0xFFA1A1A1);
-  static const darkTextMuted = Color(0xFF888888);
+  static const darkTextSecondary = Color(0xFFA1A1AA);
+  static const darkTextMuted = Color(0xFF71717A);
+  static const darkBorder = Color(0xFF27272A);
 
-  // Light theme
-  static const lightBg = Color(0xFFFAFAFA);
-  static const lightBgSecondary = Color(0xFFF5F5F5);
+  // Light theme — Zinc palette (gray background, white cards)
+  static const lightBg = Color(0xFFF4F4F5);
+  static const lightBgSecondary = Color(0xFFFFFFFF);
   static const lightBgElevated = Color(0xFFFFFFFF);
-  static const lightBgSubtle = Color(0xFFEEEEEE);
-  static const lightTextPrimary = Color(0xFF111111);
-  static const lightTextSecondary = Color(0xFF555555);
-  static const lightTextMuted = Color(0xFF777777);
+  static const lightBgSubtle = Color(0xFFF4F4F5);
+  static const lightTextPrimary = Color(0xFF09090B);
+  static const lightTextSecondary = Color(0xFF71717A);
+  static const lightTextMuted = Color(0xFFA1A1AA);
+  static const lightBorder = Color(0xFFE4E4E7);
 
   // Status
   static const success = Color(0xFF22C55E);

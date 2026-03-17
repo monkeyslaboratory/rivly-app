@@ -427,6 +427,7 @@ class _RunProgressBody extends StatelessWidget {
   // ---------------------------------------------------------------------------
   Widget _buildCurrentActivity(
       BuildContext context, RunProgressState state, bool isDark) {
+    final l = AppLocalizations.of(context);
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
@@ -455,7 +456,7 @@ class _RunProgressBody extends StatelessWidget {
               ),
               const SizedBox(width: 10),
               Text(
-                'Current Activity',
+                l.currentActivity,
                 style: TextStyle(
                   fontWeight: FontWeight.w600,
                   fontSize: 13,
@@ -471,7 +472,7 @@ class _RunProgressBody extends StatelessWidget {
             state.run?.currentPhase != null &&
                     state.run!.currentPhase.isNotEmpty
                 ? state.run!.phaseLabel
-                : 'Processing...',
+                : l.processing,
             style: TextStyle(
               fontSize: 14,
               color: isDark
@@ -503,6 +504,7 @@ class _RunProgressBody extends StatelessWidget {
     final screenshots = _getScreenshotsFromRun(state);
     if (screenshots.isEmpty) return [];
 
+    final l = AppLocalizations.of(context);
     final mutedColor =
         isDark ? AppColors.darkTextMuted : AppColors.lightTextMuted;
 
@@ -511,14 +513,14 @@ class _RunProgressBody extends StatelessWidget {
       Padding(
         padding: const EdgeInsets.only(bottom: 8),
         child: Text(
-          'Captured Pages (${screenshots.length})',
+          l.capturedPages(screenshots.length),
           style: Theme.of(context).textTheme.titleSmall?.copyWith(
                 fontWeight: FontWeight.w600,
               ),
         ),
       ),
       ...screenshots.map((s) {
-        final pageName = s['page_name'] as String? ?? 'Unknown';
+        final pageName = s['page_name'] as String? ?? l.unknown;
         final status = s['status'] as String? ?? '';
         final deviceType = s['device_type'] as String? ?? '';
 
@@ -629,7 +631,7 @@ class _RunProgressBody extends StatelessWidget {
     final l = AppLocalizations.of(context);
     final errorText = state.run?.errorLog.isNotEmpty == true
         ? state.run!.errorLog
-        : 'An unknown error occurred.';
+        : l.unknownError;
 
     return Container(
       width: double.infinity,
