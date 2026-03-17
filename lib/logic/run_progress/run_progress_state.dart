@@ -6,12 +6,14 @@ class RunProgressState extends Equatable {
   final bool isLoading;
   final String? error;
   final DateTime? trackingStartedAt;
+  final Map<String, dynamic>? rawData;
 
   const RunProgressState({
     this.run,
     this.isLoading = false,
     this.error,
     this.trackingStartedAt,
+    this.rawData,
   });
 
   // Derived
@@ -46,15 +48,17 @@ class RunProgressState extends Equatable {
     String? error,
     bool clearError = false,
     DateTime? trackingStartedAt,
+    Map<String, dynamic>? rawData,
   }) {
     return RunProgressState(
       run: run ?? this.run,
       isLoading: isLoading ?? this.isLoading,
       error: clearError ? null : (error ?? this.error),
       trackingStartedAt: trackingStartedAt ?? this.trackingStartedAt,
+      rawData: rawData ?? this.rawData,
     );
   }
 
   @override
-  List<Object?> get props => [run, isLoading, error, trackingStartedAt];
+  List<Object?> get props => [run, isLoading, error, trackingStartedAt, rawData];
 }

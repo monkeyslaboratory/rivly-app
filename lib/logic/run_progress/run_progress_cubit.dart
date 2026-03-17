@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../data/models/run_model.dart';
 import '../../data/repositories/run_repository.dart';
 import 'run_progress_state.dart';
 
@@ -17,8 +18,9 @@ class RunProgressCubit extends Cubit<RunProgressState> {
     ));
 
     try {
-      final run = await _runRepository.getRun(runId);
-      emit(state.copyWith(run: run, isLoading: false));
+      final rawResponse = await _runRepository.getRawRun(runId);
+      final run = RunModel.fromJson(rawResponse);
+      emit(state.copyWith(run: run, rawData: rawResponse, isLoading: false));
 
       if (run.isRunning && !run.needsApproval) {
         _startPolling(runId);
@@ -40,9 +42,10 @@ class RunProgressCubit extends Cubit<RunProgressState> {
 
   Future<void> _poll(String runId) async {
     try {
-      final run = await _runRepository.getRun(runId);
+      final rawResponse = await _runRepository.getRawRun(runId);
+      final run = RunModel.fromJson(rawResponse);
       if (isClosed) return;
-      emit(state.copyWith(run: run));
+      emit(state.copyWith(run: run, rawData: rawResponse));
 
       if (!run.isRunning || run.needsApproval) {
         _stopPolling();

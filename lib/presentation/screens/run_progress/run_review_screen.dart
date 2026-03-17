@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/api_constants.dart';
@@ -30,7 +31,14 @@ class _RunReviewScreenState extends State<RunReviewScreen> {
   final TextEditingController _authLoginUrlController = TextEditingController();
   final TextEditingController _authEmailController = TextEditingController();
   final TextEditingController _authPasswordController = TextEditingController();
+  final TextEditingController _verificationCodeController = TextEditingController();
   String? _competitorName;
+
+  // Auth polling state
+  Timer? _authPollTimer;
+  String _currentAuthStatus = '';
+  String _currentAuthMessage = '';
+  bool _isSubmittingCode = false;
 
   @override
   void initState() {
@@ -40,10 +48,12 @@ class _RunReviewScreenState extends State<RunReviewScreen> {
 
   @override
   void dispose() {
+    _authPollTimer?.cancel();
     _urlController.dispose();
     _authLoginUrlController.dispose();
     _authEmailController.dispose();
     _authPasswordController.dispose();
+    _verificationCodeController.dispose();
     super.dispose();
   }
 
@@ -176,30 +186,84 @@ class _RunReviewScreenState extends State<RunReviewScreen> {
         loginUrl: loginUrl.isNotEmpty ? loginUrl : null,
       );
 
-      // Reload screenshots to get the new authenticated versions
-      await _loadRunData();
-
       if (!mounted) return;
-      _authEmailController.clear();
-      _authPasswordController.clear();
-      _authLoginUrlController.clear();
+      setState(() {
+        _currentAuthStatus = 'authenticating';
+        _currentAuthMessage = 'Logging in...';
+      });
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(AppLocalizations.of(context).authPagesRecaptured),
-          backgroundColor: AppColors.success,
-        ),
-      );
+      // Start polling for auth status updates
+      _startAuthPolling();
     } catch (e) {
       if (!mounted) return;
+      setState(() => _isAuthCrawling = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Auth crawl failed: $e'),
           backgroundColor: AppColors.error,
         ),
       );
-    } finally {
-      if (mounted) setState(() => _isAuthCrawling = false);
+    }
+  }
+
+  void _startAuthPolling() {
+    _authPollTimer?.cancel();
+    _authPollTimer = Timer.periodic(const Duration(seconds: 2), (_) async {
+      try {
+        final data = await RunRepository().getRawRun(widget.runId);
+        final authStatus = data['auth_status'] as String? ?? '';
+        final authMessage = data['auth_message'] as String? ?? '';
+        if (!mounted) return;
+        setState(() {
+          _currentAuthStatus = authStatus;
+          _currentAuthMessage = authMessage;
+        });
+        // Stop polling on terminal states
+        if (authStatus == 'logged_in' || authStatus == 'auth_failed' || (authStatus.isEmpty && authMessage.isEmpty)) {
+          _authPollTimer?.cancel();
+          if (authStatus == 'logged_in') {
+            // Reload screenshots to get recaptured pages
+            await _loadRunData();
+            if (!mounted) return;
+            setState(() => _isAuthCrawling = false);
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(AppLocalizations.of(context).authPagesRecaptured),
+                backgroundColor: AppColors.success,
+              ),
+            );
+            _authEmailController.clear();
+            _authPasswordController.clear();
+            _authLoginUrlController.clear();
+          } else if (authStatus == 'auth_failed') {
+            setState(() => _isAuthCrawling = false);
+          }
+        }
+      } catch (_) {}
+    });
+  }
+
+  Future<void> _submitVerificationCode() async {
+    final code = _verificationCodeController.text.trim();
+    if (code.isEmpty) return;
+
+    setState(() => _isSubmittingCode = true);
+
+    try {
+      await _runRepository.submitVerificationCode(widget.runId, code);
+      if (!mounted) return;
+      _verificationCodeController.clear();
+      setState(() => _isSubmittingCode = false);
+      // Continue polling — auth status will update
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isSubmittingCode = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to submit code: $e'),
+          backgroundColor: AppColors.error,
+        ),
+      );
     }
   }
 
@@ -774,19 +838,277 @@ class _RunReviewScreenState extends State<RunReviewScreen> {
             ),
           ),
 
+          // Auth status feedback
+          if (_currentAuthStatus.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            _buildAuthStatusCard(context, isDark),
+          ],
+
           const SizedBox(height: 10),
 
           // Skip text
-          Center(
-            child: Text(
-              AppLocalizations.of(context).skipAuthNote,
+          if (_currentAuthStatus.isEmpty)
+            Center(
+              child: Text(
+                AppLocalizations.of(context).skipAuthNote,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: isDark ? AppColors.darkTextMuted : AppColors.lightTextMuted,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAuthStatusCard(BuildContext context, bool isDark) {
+    final Color statusColor;
+    final IconData statusIcon;
+    final String statusLabel;
+
+    switch (_currentAuthStatus) {
+      case 'logged_in':
+        statusColor = AppColors.success;
+        statusIcon = Icons.check_circle;
+        statusLabel = 'Logged In';
+      case 'auth_failed':
+        statusColor = AppColors.error;
+        statusIcon = Icons.error;
+        statusLabel = 'Authentication Failed';
+      case 'captcha_required':
+        statusColor = AppColors.warning;
+        statusIcon = Icons.smart_toy_outlined;
+        statusLabel = 'Captcha Required';
+      case 'code_required':
+        statusColor = AppColors.accentSecondary;
+        statusIcon = Icons.pin_outlined;
+        statusLabel = 'Verification Code Required';
+      case 'authenticating':
+        statusColor = AppColors.accentSecondary;
+        statusIcon = Icons.lock_open;
+        statusLabel = 'Authenticating';
+      default:
+        statusColor = isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary;
+        statusIcon = Icons.info_outline;
+        statusLabel = _currentAuthStatus;
+    }
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: statusColor.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: statusColor.withValues(alpha: 0.3)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Status header
+          Row(
+            children: [
+              Icon(statusIcon, size: 18, color: statusColor),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  statusLabel,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: statusColor,
+                  ),
+                ),
+              ),
+              if (_currentAuthStatus == 'authenticating' || _currentAuthStatus == 'logged_in' && _isAuthCrawling)
+                SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation(statusColor),
+                  ),
+                ),
+            ],
+          ),
+
+          // Status message
+          if (_currentAuthMessage.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Text(
+              _currentAuthMessage,
+              style: TextStyle(
+                fontSize: 13,
+                color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+              ),
+            ),
+          ],
+
+          // Captcha input
+          if (_currentAuthStatus == 'captcha_required') ...[
+            const SizedBox(height: 12),
+            Text(
+              'Enter the captcha code shown on the page:',
               style: TextStyle(
                 fontSize: 12,
-                color: isDark ? AppColors.darkTextMuted : AppColors.lightTextMuted,
+                color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
               ),
-              textAlign: TextAlign.center,
             ),
-          ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _verificationCodeController,
+                    enabled: !_isSubmittingCode,
+                    decoration: _authInputDecoration(
+                      context,
+                      isDark: isDark,
+                      hintText: 'Enter captcha code',
+                      prefixIcon: Icons.smart_toy_outlined,
+                    ),
+                    textInputAction: TextInputAction.done,
+                    onSubmitted: (_) => _submitVerificationCode(),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                SizedBox(
+                  height: 48,
+                  child: ElevatedButton(
+                    onPressed: _isSubmittingCode ? null : _submitVerificationCode,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.accentSecondary,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                    ),
+                    child: _isSubmittingCode
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            ),
+                          )
+                        : const Text('Submit', style: TextStyle(fontWeight: FontWeight.w600)),
+                  ),
+                ),
+              ],
+            ),
+          ],
+
+          // Verification code input
+          if (_currentAuthStatus == 'code_required') ...[
+            const SizedBox(height: 12),
+            Text(
+              'Check your email or phone for the verification code.',
+              style: TextStyle(
+                fontSize: 12,
+                color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _verificationCodeController,
+                    enabled: !_isSubmittingCode,
+                    decoration: _authInputDecoration(
+                      context,
+                      isDark: isDark,
+                      hintText: 'Enter verification code',
+                      prefixIcon: Icons.pin_outlined,
+                    ),
+                    keyboardType: TextInputType.number,
+                    textInputAction: TextInputAction.done,
+                    onSubmitted: (_) => _submitVerificationCode(),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                SizedBox(
+                  height: 48,
+                  child: ElevatedButton(
+                    onPressed: _isSubmittingCode ? null : _submitVerificationCode,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.accentSecondary,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                    ),
+                    child: _isSubmittingCode
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            ),
+                          )
+                        : const Text('Submit', style: TextStyle(fontWeight: FontWeight.w600)),
+                  ),
+                ),
+              ],
+            ),
+          ],
+
+          // Auth failed — retry button
+          if (_currentAuthStatus == 'auth_failed') ...[
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              height: 40,
+              child: OutlinedButton.icon(
+                onPressed: () {
+                  setState(() {
+                    _currentAuthStatus = '';
+                    _currentAuthMessage = '';
+                    _isAuthCrawling = false;
+                  });
+                },
+                icon: const Icon(Icons.refresh, size: 16),
+                label: const Text('Try Again', style: TextStyle(fontWeight: FontWeight.w600)),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.error,
+                  side: BorderSide(color: AppColors.error.withValues(alpha: 0.5)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+              ),
+            ),
+          ],
+
+          // Logged in — success with recapture progress
+          if (_currentAuthStatus == 'logged_in' && _isAuthCrawling) ...[
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                SizedBox(
+                  width: 14,
+                  height: 14,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: const AlwaysStoppedAnimation(AppColors.success),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'Recapturing authenticated pages...',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ],
         ],
       ),
     );

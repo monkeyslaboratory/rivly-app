@@ -111,6 +111,15 @@ class _RunProgressBody extends StatelessWidget {
                 // -- Phase timeline --
                 _buildPhaseTimeline(context, state, isDark),
 
+                // -- Current activity --
+                if (state.isRunning) ...[
+                  const SizedBox(height: 20),
+                  _buildCurrentActivity(context, state, isDark),
+                ],
+
+                // -- Captured pages --
+                ..._buildCapturedPages(context, state, isDark),
+
                 const SizedBox(height: 28),
 
                 // -- Linear progress bar --
@@ -411,6 +420,140 @@ class _RunProgressBody extends StatelessWidget {
         ],
       ],
     );
+  }
+
+  // ---------------------------------------------------------------------------
+  // Current activity
+  // ---------------------------------------------------------------------------
+  Widget _buildCurrentActivity(
+      BuildContext context, RunProgressState state, bool isDark) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.darkBgSecondary : AppColors.lightBgSecondary,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isDark
+              ? Colors.white.withValues(alpha: 0.06)
+              : Colors.black.withValues(alpha: 0.06),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor:
+                      const AlwaysStoppedAnimation(AppColors.accentSecondary),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Text(
+                'Current Activity',
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13,
+                  color: isDark
+                      ? AppColors.darkTextPrimary
+                      : AppColors.lightTextPrimary,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            state.run?.currentPhase != null &&
+                    state.run!.currentPhase.isNotEmpty
+                ? state.run!.phaseLabel
+                : 'Processing...',
+            style: TextStyle(
+              fontSize: 14,
+              color: isDark
+                  ? AppColors.darkTextPrimary
+                  : AppColors.lightTextPrimary,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // Captured pages from raw data
+  // ---------------------------------------------------------------------------
+  List<Map<String, dynamic>> _getScreenshotsFromRun(RunProgressState state) {
+    final raw = state.rawData;
+    if (raw == null) return [];
+    final screenshots = raw['screenshots'] as List<dynamic>?;
+    if (screenshots == null) return [];
+    return screenshots
+        .map((s) => s as Map<String, dynamic>)
+        .toList();
+  }
+
+  List<Widget> _buildCapturedPages(
+      BuildContext context, RunProgressState state, bool isDark) {
+    if (state.run == null) return [];
+    final screenshots = _getScreenshotsFromRun(state);
+    if (screenshots.isEmpty) return [];
+
+    final mutedColor =
+        isDark ? AppColors.darkTextMuted : AppColors.lightTextMuted;
+
+    return [
+      const SizedBox(height: 16),
+      Padding(
+        padding: const EdgeInsets.only(bottom: 8),
+        child: Text(
+          'Captured Pages (${screenshots.length})',
+          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+        ),
+      ),
+      ...screenshots.map((s) {
+        final pageName = s['page_name'] as String? ?? 'Unknown';
+        final status = s['status'] as String? ?? '';
+        final deviceType = s['device_type'] as String? ?? '';
+
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 4),
+          child: Row(
+            children: [
+              Icon(
+                status == 'success' ? Icons.check_circle : Icons.warning,
+                size: 14,
+                color:
+                    status == 'success' ? AppColors.success : AppColors.warning,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  pageName,
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: isDark
+                        ? AppColors.darkTextPrimary
+                        : AppColors.lightTextPrimary,
+                  ),
+                ),
+              ),
+              if (deviceType.isNotEmpty)
+                Text(
+                  deviceType,
+                  style: TextStyle(fontSize: 11, color: mutedColor),
+                ),
+            ],
+          ),
+        );
+      }),
+    ];
   }
 
   // ---------------------------------------------------------------------------

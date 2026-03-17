@@ -49,6 +49,12 @@ class RunRepository {
     return (response.data['added'] as List<dynamic>).map((e) => e as Map<String, dynamic>).toList();
   }
 
+  Future<void> submitVerificationCode(String runId, String code) async {
+    await _client.post('${ApiConstants.runDetail(runId)}submit-code/', data: {
+      'code': code,
+    });
+  }
+
   Future<void> submitAuthCredentials(String runId, {
     required String email,
     required String password,
