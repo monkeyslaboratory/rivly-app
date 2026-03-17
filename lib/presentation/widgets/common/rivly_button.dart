@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 enum RivlyButtonVariant { primary, outline, ghost }
 
@@ -27,29 +28,59 @@ class RivlyButton extends StatelessWidget {
     Widget button;
     switch (variant) {
       case RivlyButtonVariant.primary:
-        final buttonStyle = Theme.of(context).elevatedButtonTheme.style;
-        final fgColor = buttonStyle?.foregroundColor?.resolve({}) ??
-            Theme.of(context).scaffoldBackgroundColor;
         button = ElevatedButton(
           onPressed: effectiveOnPressed,
-          style: buttonStyle?.copyWith(
-            minimumSize: WidgetStatePropertyAll(const Size(0, 52)),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.black,
+            foregroundColor: Colors.white,
+            elevation: 0,
+            minimumSize: const Size(0, 48),
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            textStyle: GoogleFonts.inter(
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+            ),
           ),
-          child: _buildChild(fgColor),
+          child: _buildChild(Colors.white),
         );
         break;
       case RivlyButtonVariant.outline:
         button = OutlinedButton(
           onPressed: effectiveOnPressed,
-          style: Theme.of(context).outlinedButtonTheme.style?.copyWith(
-                minimumSize: WidgetStatePropertyAll(const Size(0, 48)),
-              ),
+          style: OutlinedButton.styleFrom(
+            foregroundColor: Theme.of(context).colorScheme.onSurface,
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            minimumSize: const Size(0, 48),
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            side: BorderSide(
+              color: Colors.black.withValues(alpha: 0.2),
+              width: 0.5,
+            ),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            textStyle: GoogleFonts.inter(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
           child: _buildChild(Theme.of(context).colorScheme.onSurface),
         );
         break;
       case RivlyButtonVariant.ghost:
         button = TextButton(
           onPressed: effectiveOnPressed,
+          style: TextButton.styleFrom(
+            foregroundColor: Theme.of(context).colorScheme.onSurface,
+            textStyle: GoogleFonts.inter(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
           child: _buildChild(Theme.of(context).colorScheme.onSurface),
         );
         break;

@@ -9,8 +9,7 @@ import 'logic/auth/auth_state.dart';
 import 'logic/dashboard/dashboard_cubit.dart';
 import 'logic/theme/theme_cubit.dart';
 import 'logic/theme/theme_state.dart';
-import 'presentation/screens/auth/login_screen.dart';
-import 'presentation/screens/auth/register_screen.dart';
+import 'presentation/screens/auth/auth_screen.dart';
 import 'presentation/screens/dashboard/dashboard_screen.dart';
 import 'presentation/screens/run_progress/run_progress_screen.dart';
 import 'presentation/screens/run_progress/run_review_screen.dart';
@@ -62,11 +61,11 @@ class _RivlyAppState extends State<RivlyApp> {
       routes: [
         GoRoute(
           path: '/login',
-          builder: (context, state) => const LoginScreen(),
+          builder: (context, state) => const AuthScreen(),
         ),
         GoRoute(
           path: '/register',
-          builder: (context, state) => const RegisterScreen(),
+          builder: (context, state) => const AuthScreen(isRegister: true),
         ),
         GoRoute(
           path: '/dashboard',

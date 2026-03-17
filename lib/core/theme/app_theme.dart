@@ -6,77 +6,77 @@ class AppTheme {
   static TextTheme _buildTextTheme(TextTheme base, Color primaryColor,
       Color secondaryColor, Color mutedColor) {
     return base.copyWith(
-      displayLarge: GoogleFonts.dmSans(
+      displayLarge: GoogleFonts.inter(
         fontSize: 32,
-        fontWeight: FontWeight.w700,
+        fontWeight: FontWeight.w600,
         color: primaryColor,
       ),
-      displayMedium: GoogleFonts.dmSans(
+      displayMedium: GoogleFonts.inter(
         fontSize: 28,
-        fontWeight: FontWeight.w700,
+        fontWeight: FontWeight.w600,
         color: primaryColor,
       ),
-      displaySmall: GoogleFonts.dmSans(
+      displaySmall: GoogleFonts.inter(
         fontSize: 24,
         fontWeight: FontWeight.w600,
         color: primaryColor,
       ),
-      headlineLarge: GoogleFonts.dmSans(
+      headlineLarge: GoogleFonts.inter(
         fontSize: 22,
         fontWeight: FontWeight.w600,
         color: primaryColor,
       ),
-      headlineMedium: GoogleFonts.dmSans(
+      headlineMedium: GoogleFonts.inter(
         fontSize: 20,
         fontWeight: FontWeight.w600,
         color: primaryColor,
       ),
-      headlineSmall: GoogleFonts.dmSans(
+      headlineSmall: GoogleFonts.inter(
         fontSize: 18,
         fontWeight: FontWeight.w600,
         color: primaryColor,
       ),
-      titleLarge: GoogleFonts.dmSans(
+      titleLarge: GoogleFonts.inter(
         fontSize: 16,
         fontWeight: FontWeight.w600,
         color: primaryColor,
       ),
-      titleMedium: GoogleFonts.dmSans(
+      titleMedium: GoogleFonts.inter(
         fontSize: 14,
         fontWeight: FontWeight.w500,
         color: secondaryColor,
       ),
-      titleSmall: GoogleFonts.dmSans(
+      titleSmall: GoogleFonts.inter(
         fontSize: 12,
         fontWeight: FontWeight.w500,
         color: secondaryColor,
       ),
-      bodyLarge: GoogleFonts.dmSans(
+      bodyLarge: GoogleFonts.inter(
         fontSize: 16,
         fontWeight: FontWeight.w400,
         color: primaryColor,
       ),
-      bodyMedium: GoogleFonts.dmSans(
+      bodyMedium: GoogleFonts.inter(
         fontSize: 14,
         fontWeight: FontWeight.w400,
         color: secondaryColor,
       ),
-      bodySmall: GoogleFonts.dmSans(
+      bodySmall: GoogleFonts.inter(
         fontSize: 12,
         fontWeight: FontWeight.w400,
         color: mutedColor,
       ),
-      labelLarge: GoogleFonts.dmSans(
+      labelLarge: GoogleFonts.inter(
         fontSize: 14,
-        fontWeight: FontWeight.w600,
+        fontWeight: FontWeight.w500,
         color: primaryColor,
       ),
-      labelMedium: GoogleFonts.dmSans(
+      labelMedium: GoogleFonts.inter(
         fontSize: 12,
         fontWeight: FontWeight.w500,
         color: secondaryColor,
       ),
-      labelSmall: GoogleFonts.dmSans(
+      labelSmall: GoogleFonts.inter(
         fontSize: 10,
         fontWeight: FontWeight.w500,
         color: mutedColor,
@@ -95,6 +95,7 @@ class AppTheme {
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.dark,
+      fontFamily: 'Inter',
       scaffoldBackgroundColor: AppColors.darkBg,
       colorScheme: const ColorScheme.dark(
         primary: AppColors.accentPrimary,
@@ -106,15 +107,20 @@ class AppTheme {
         onSurface: AppColors.darkTextPrimary,
         onError: Colors.white,
       ),
+      textSelectionTheme: TextSelectionThemeData(
+        cursorColor: AppColors.darkTextPrimary,
+        selectionColor: AppColors.accentSecondary.withValues(alpha: 0.3),
+        selectionHandleColor: AppColors.accentSecondary,
+      ),
       textTheme: textTheme,
       appBarTheme: AppBarTheme(
         backgroundColor: AppColors.darkBg,
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: false,
-        titleTextStyle: GoogleFonts.dmSans(
+        titleTextStyle: GoogleFonts.inter(
           fontSize: 20,
-          fontWeight: FontWeight.w700,
+          fontWeight: FontWeight.w600,
           color: AppColors.darkTextPrimary,
         ),
         iconTheme: const IconThemeData(color: AppColors.darkTextPrimary),
@@ -149,11 +155,11 @@ class AppTheme {
           borderRadius: BorderRadius.circular(16),
           borderSide: const BorderSide(color: AppColors.error),
         ),
-        hintStyle: GoogleFonts.dmSans(
+        hintStyle: GoogleFonts.inter(
           color: AppColors.darkTextMuted,
           fontSize: 14,
         ),
-        labelStyle: GoogleFonts.dmSans(
+        labelStyle: GoogleFonts.inter(
           color: AppColors.darkTextSecondary,
           fontSize: 14,
         ),
@@ -166,9 +172,9 @@ class AppTheme {
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          textStyle: GoogleFonts.dmSans(
+          textStyle: GoogleFonts.inter(
             fontSize: 14,
-            fontWeight: FontWeight.w600,
+            fontWeight: FontWeight.w500,
           ),
         ),
       ),
@@ -179,18 +185,18 @@ class AppTheme {
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          textStyle: GoogleFonts.dmSans(
+          textStyle: GoogleFonts.inter(
             fontSize: 14,
-            fontWeight: FontWeight.w600,
+            fontWeight: FontWeight.w500,
           ),
         ),
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           foregroundColor: AppColors.accentPrimary,
-          textStyle: GoogleFonts.dmSans(
+          textStyle: GoogleFonts.inter(
             fontSize: 14,
-            fontWeight: FontWeight.w600,
+            fontWeight: FontWeight.w500,
           ),
         ),
       ),
@@ -205,7 +211,7 @@ class AppTheme {
       ),
       snackBarTheme: SnackBarThemeData(
         backgroundColor: AppColors.darkBgElevated,
-        contentTextStyle: GoogleFonts.dmSans(color: AppColors.darkTextPrimary),
+        contentTextStyle: GoogleFonts.inter(color: AppColors.darkTextPrimary),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         behavior: SnackBarBehavior.floating,
       ),
@@ -230,6 +236,7 @@ class AppTheme {
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.light,
+      fontFamily: 'Inter',
       scaffoldBackgroundColor: AppColors.lightBg,
       colorScheme: const ColorScheme.light(
         primary: AppColors.accentPrimary,
@@ -241,15 +248,20 @@ class AppTheme {
         onSurface: AppColors.lightTextPrimary,
         onError: Colors.white,
       ),
+      textSelectionTheme: TextSelectionThemeData(
+        cursorColor: AppColors.lightTextPrimary,
+        selectionColor: AppColors.accentSecondary.withValues(alpha: 0.3),
+        selectionHandleColor: AppColors.accentSecondary,
+      ),
       textTheme: textTheme,
       appBarTheme: AppBarTheme(
         backgroundColor: AppColors.lightBg,
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: false,
-        titleTextStyle: GoogleFonts.dmSans(
+        titleTextStyle: GoogleFonts.inter(
           fontSize: 20,
-          fontWeight: FontWeight.w700,
+          fontWeight: FontWeight.w600,
           color: AppColors.lightTextPrimary,
         ),
         iconTheme: const IconThemeData(color: AppColors.lightTextPrimary),
@@ -284,11 +296,11 @@ class AppTheme {
           borderRadius: BorderRadius.circular(16),
           borderSide: const BorderSide(color: AppColors.error),
         ),
-        hintStyle: GoogleFonts.dmSans(
+        hintStyle: GoogleFonts.inter(
           color: AppColors.lightTextMuted,
           fontSize: 14,
         ),
-        labelStyle: GoogleFonts.dmSans(
+        labelStyle: GoogleFonts.inter(
           color: AppColors.lightTextSecondary,
           fontSize: 14,
         ),
@@ -301,9 +313,9 @@ class AppTheme {
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          textStyle: GoogleFonts.dmSans(
+          textStyle: GoogleFonts.inter(
             fontSize: 14,
-            fontWeight: FontWeight.w600,
+            fontWeight: FontWeight.w500,
           ),
         ),
       ),
@@ -314,18 +326,18 @@ class AppTheme {
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          textStyle: GoogleFonts.dmSans(
+          textStyle: GoogleFonts.inter(
             fontSize: 14,
-            fontWeight: FontWeight.w600,
+            fontWeight: FontWeight.w500,
           ),
         ),
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           foregroundColor: AppColors.accentPrimary,
-          textStyle: GoogleFonts.dmSans(
+          textStyle: GoogleFonts.inter(
             fontSize: 14,
-            fontWeight: FontWeight.w600,
+            fontWeight: FontWeight.w500,
           ),
         ),
       ),
@@ -341,7 +353,7 @@ class AppTheme {
       snackBarTheme: SnackBarThemeData(
         backgroundColor: AppColors.lightBgElevated,
         contentTextStyle:
-            GoogleFonts.dmSans(color: AppColors.lightTextPrimary),
+            GoogleFonts.inter(color: AppColors.lightTextPrimary),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         behavior: SnackBarBehavior.floating,
       ),
