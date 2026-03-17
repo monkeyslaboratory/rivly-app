@@ -351,6 +351,19 @@ class AppLocalizations {
   String get chooseCompetitiveLandscape =>
       _t('Choose your competitive landscape', 'Выберите конкурентное окружение');
 
+  // -- Browser Session --
+  String get interactiveLogin => _t('Log in interactively', 'Войти интерактивно');
+  String get interactiveLoginDesc =>
+      _t('Complete login in a live browser session', 'Пройдите авторизацию в живой сессии браузера');
+  String get imLoggedIn => _t("Done — I'm logged in", 'Готово — я вошёл');
+  String get browserSession => _t('Browser Session', 'Сессия браузера');
+  String get connectingToBrowser =>
+      _t('Connecting to browser...', 'Подключение к браузеру...');
+  String get cookiesCaptured => _t('Cookies captured!', 'Куки получены!');
+  String get sessionComplete => _t('Session complete', 'Сессия завершена');
+  String get recrawlingPages =>
+      _t('Re-capturing authenticated pages...', 'Перезахватываем авторизованные страницы...');
+
   // -- Settings --
   String get settings => _t('Settings', '\u041d\u0430\u0441\u0442\u0440\u043e\u0439\u043a\u0438');
   String get language => _t('Language', '\u042f\u0437\u044b\u043a');

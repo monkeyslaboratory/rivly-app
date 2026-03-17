@@ -55,6 +55,13 @@ class RunRepository {
     });
   }
 
+  Future<Map<String, dynamic>> startBrowserSession(String runId, {String? loginUrl}) async {
+    final response = await _client.post(ApiConstants.browserSession(runId), data: {
+      if (loginUrl != null) 'login_url': loginUrl,
+    });
+    return response.data as Map<String, dynamic>;
+  }
+
   Future<void> submitAuthCredentials(String runId, {
     required String email,
     required String password,

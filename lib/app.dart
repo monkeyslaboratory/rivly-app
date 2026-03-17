@@ -44,11 +44,16 @@ class _RivlyAppState extends State<RivlyApp> {
         final isAuthRoute = state.matchedLocation == '/login' ||
             state.matchedLocation == '/register';
 
+        // While auth is loading, stay on auth routes or redirect to login
+        if (authState is AuthInitial || authState is AuthLoading) {
+          return isAuthRoute ? null : '/login';
+        }
+
         if (authState is Authenticated && isAuthRoute) {
           return '/dashboard';
         }
 
-        if (authState is Unauthenticated && !isAuthRoute) {
+        if (authState is! Authenticated && !isAuthRoute) {
           return '/login';
         }
 

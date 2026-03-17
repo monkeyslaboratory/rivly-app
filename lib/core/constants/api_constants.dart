@@ -26,7 +26,11 @@ class ApiConstants {
   static String runReport(String id) => '$baseUrl/runs/$id/report/';
   static String screenshotImage(String id) => '$baseUrl/runs/screenshots/$id/';
 
+  // Browser Session
+  static String browserSession(String id) => '$baseUrl/runs/$id/browser-session/';
+
   // WebSocket
   static String wsRun(String runId, String token) =>
       '$wsUrl/runs/$runId/?token=$token';
+  static String wsBrowser(String runId) => '$wsUrl/browser/$runId/';
 }

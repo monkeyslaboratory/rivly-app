@@ -1,17 +1,16 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'web_storage_stub.dart' if (dart.library.html) 'web_storage_impl.dart';
 
-/// Simple in-memory + localStorage fallback for web.
-/// Uses FlutterSecureStorage on mobile, in-memory map on web.
+/// Token storage: localStorage on web, FlutterSecureStorage on mobile.
 class SecureStorageService {
-  static const _accessTokenKey = 'access_token';
-  static const _refreshTokenKey = 'refresh_token';
+  static const _accessTokenKey = 'rivly_access_token';
+  static const _refreshTokenKey = 'rivly_refresh_token';
 
   static final SecureStorageService _instance = SecureStorageService._();
   factory SecureStorageService() => _instance;
 
   final FlutterSecureStorage? _nativeStorage;
-  final Map<String, String> _memoryStore = {};
 
   SecureStorageService._()
       : _nativeStorage = kIsWeb
@@ -22,14 +21,14 @@ class SecureStorageService {
 
   Future<String?> _read(String key) async {
     if (kIsWeb) {
-      return _memoryStore[key];
+      return WebStorage.read(key);
     }
     return _nativeStorage!.read(key: key);
   }
 
   Future<void> _write(String key, String value) async {
     if (kIsWeb) {
-      _memoryStore[key] = value;
+      WebStorage.write(key, value);
       return;
     }
     await _nativeStorage!.write(key: key, value: value);
@@ -37,7 +36,7 @@ class SecureStorageService {
 
   Future<void> _delete(String key) async {
     if (kIsWeb) {
-      _memoryStore.remove(key);
+      WebStorage.delete(key);
       return;
     }
     await _nativeStorage!.delete(key: key);

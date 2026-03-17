@@ -6,6 +6,7 @@ import '../../../core/l10n/app_localizations.dart';
 import '../../../core/network/dio_client.dart';
 import '../../../core/theme/colors.dart';
 import '../../../data/repositories/run_repository.dart';
+import '../../widgets/browser_session_dialog.dart';
 import '../../widgets/common/rivly_button.dart';
 
 class RunReviewScreen extends StatefulWidget {
@@ -33,6 +34,9 @@ class _RunReviewScreenState extends State<RunReviewScreen> {
   final TextEditingController _authPasswordController = TextEditingController();
   final TextEditingController _verificationCodeController = TextEditingController();
   String? _competitorName;
+
+  // Auth mode: 0 = interactive, 1 = credentials
+  int _authMode = 0;
 
   // Auth polling state
   Timer? _authPollTimer;
@@ -75,10 +79,19 @@ class _RunReviewScreenState extends State<RunReviewScreen> {
         _competitorName = first['url'] as String? ?? first['name'] as String?;
       }
 
+      // Track auth status from run data
+      final authStatus = data['auth_status'] as String? ?? '';
+      final hasAuthCookies = (data['auth_cookies'] as List<dynamic>?)?.isNotEmpty ?? false;
+
       setState(() {
+        if (authStatus.isNotEmpty) {
+          _currentAuthStatus = authStatus;
+        }
         _screenshots = screenshots.map((s) {
           final shot = s as Map<String, dynamic>;
           final status = shot['status'] as String? ?? 'unknown';
+          // If we have cookies and page is auth_required, treat as selected (will be recrawled)
+          final shouldSelect = status == 'success' || (status == 'auth_required' && hasAuthCookies);
           return _ScreenshotEntry(
             id: shot['id'] as String,
             pageName: shot['page_name'] as String? ?? 'Unknown',
@@ -86,7 +99,7 @@ class _RunReviewScreenState extends State<RunReviewScreen> {
             status: status,
             width: (shot['width'] as num?)?.toInt(),
             height: (shot['height'] as num?)?.toInt(),
-            selected: status == 'success',  // auth_required and failed are unchecked
+            selected: shouldSelect,
           );
         }).toList();
         _isLoading = false;
@@ -96,6 +109,44 @@ class _RunReviewScreenState extends State<RunReviewScreen> {
         _error = 'Failed to load run data. Please try again.';
         _isLoading = false;
       });
+    }
+  }
+
+  /// After browser session completes, poll until recrawl finishes, then reload.
+  Future<void> _waitForRecrawl() async {
+    setState(() {
+      _isAuthCrawling = true;
+      _currentAuthStatus = 'logging_in';
+      _currentAuthMessage = AppLocalizations.of(context).recrawlingPages;
+    });
+
+    const maxAttempts = 60; // 60 * 2s = 2 min max
+    for (var i = 0; i < maxAttempts; i++) {
+      await Future.delayed(const Duration(seconds: 2));
+      if (!mounted) return;
+
+      try {
+        final data = await _runRepository.getRawRun(widget.runId);
+        final authStatus = data['auth_status'] as String? ?? '';
+        final authMessage = data['auth_message'] as String? ?? '';
+
+        setState(() {
+          _currentAuthStatus = authStatus;
+          _currentAuthMessage = authMessage;
+        });
+
+        // Terminal states
+        if (authStatus == 'logged_in' || authStatus == 'auth_failed') {
+          break;
+        }
+      } catch (_) {
+        // ignore poll errors, retry
+      }
+    }
+
+    if (mounted) {
+      setState(() => _isAuthCrawling = false);
+      await _loadRunData();
     }
   }
 
@@ -473,8 +524,8 @@ class _RunReviewScreenState extends State<RunReviewScreen> {
               // Screenshot list
               ..._buildScreenshotCards(context, isDark),
 
-              // Auth-required section
-              if (_authRequiredScreenshots.isNotEmpty) ...[
+              // Auth-required section (hide if already logged in via browser session)
+              if (_authRequiredScreenshots.isNotEmpty && _currentAuthStatus != 'logged_in') ...[
                 const SizedBox(height: 24),
                 _buildAuthWallSection(context, isDark),
               ],
@@ -687,158 +738,173 @@ class _RunReviewScreenState extends State<RunReviewScreen> {
 
           const SizedBox(height: 16),
 
-          // Divider with label
-          Row(
-            children: [
-              Expanded(child: Divider(color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.1))),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                child: Text(
-                  AppLocalizations.of(context).loginCredentials,
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: isDark ? AppColors.darkTextMuted : AppColors.lightTextMuted,
-                  ),
-                ),
-              ),
-              Expanded(child: Divider(color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.1))),
-            ],
-          ),
-
-          const SizedBox(height: 12),
-
-          // Info notice
+          // Segmented control: Interactive vs Credentials
           Container(
-            padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: AppColors.accentSecondary.withValues(alpha: 0.06),
-              borderRadius: BorderRadius.circular(8),
+              color: isDark ? AppColors.darkBgElevated : AppColors.lightBgElevated,
+              borderRadius: BorderRadius.circular(10),
             ),
+            padding: const EdgeInsets.all(3),
             child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(Icons.info_outline, size: 16, color: AppColors.accentSecondary.withValues(alpha: 0.7)),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    AppLocalizations.of(context).credentialsPrivacy,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
-                      height: 1.4,
-                    ),
-                  ),
+                _buildSegmentButton(
+                  context,
+                  index: 0,
+                  icon: Icons.open_in_browser,
+                  label: AppLocalizations.of(context).interactiveLogin,
+                  isDark: isDark,
+                ),
+                const SizedBox(width: 4),
+                _buildSegmentButton(
+                  context,
+                  index: 1,
+                  icon: Icons.lock_outline,
+                  label: AppLocalizations.of(context).loginCredentials,
+                  isDark: isDark,
                 ),
               ],
             ),
           ),
 
-          const SizedBox(height: 14),
+          const SizedBox(height: 16),
 
-          // Login URL field
-          Text(
-            AppLocalizations.of(context).loginUrl,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
-            ),
-          ),
-          const SizedBox(height: 6),
-          TextField(
-            controller: _authLoginUrlController,
-            enabled: !_isAuthCrawling,
-            decoration: _authInputDecoration(
-              context,
-              isDark: isDark,
-              hintText: 'https://example.com/login',
-              prefixIcon: Icons.link,
-            ),
-            keyboardType: TextInputType.url,
-          ),
-
-          const SizedBox(height: 12),
-
-          // Email field
-          Text(
-            AppLocalizations.of(context).emailOrUsername,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
-            ),
-          ),
-          const SizedBox(height: 6),
-          TextField(
-            controller: _authEmailController,
-            enabled: !_isAuthCrawling,
-            decoration: _authInputDecoration(
-              context,
-              isDark: isDark,
-              hintText: 'user@example.com',
-              prefixIcon: Icons.person_outline,
-            ),
-            keyboardType: TextInputType.emailAddress,
-          ),
-
-          const SizedBox(height: 12),
-
-          // Password field
-          Text(
-            AppLocalizations.of(context).password,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
-            ),
-          ),
-          const SizedBox(height: 6),
-          TextField(
-            controller: _authPasswordController,
-            enabled: !_isAuthCrawling,
-            obscureText: true,
-            decoration: _authInputDecoration(
-              context,
-              isDark: isDark,
-              hintText: '\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022',
-              prefixIcon: Icons.lock_outline,
-            ),
-          ),
-
-          const SizedBox(height: 18),
-
-          // Authenticate button
-          SizedBox(
-            width: double.infinity,
-            height: 48,
-            child: ElevatedButton.icon(
-              onPressed: _isAuthCrawling ? null : _submitAuthCredentials,
-              icon: _isAuthCrawling
-                  ? const SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                      ),
-                    )
-                  : const Icon(Icons.lock_open, size: 18),
-              label: Text(
-                _isAuthCrawling ? AppLocalizations.of(context).authenticating : AppLocalizations.of(context).authenticateRecapture,
-                style: const TextStyle(fontWeight: FontWeight.w600),
+          // Tab content
+          if (_authMode == 0) ...[
+            // Interactive login tab
+            Text(
+              AppLocalizations.of(context).interactiveLoginDesc,
+              style: TextStyle(
+                fontSize: 13,
+                color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                height: 1.4,
               ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.accentSecondary,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
+            ),
+            const SizedBox(height: 14),
+            SizedBox(
+              width: double.infinity,
+              height: 48,
+              child: ElevatedButton.icon(
+                onPressed: _isAuthCrawling
+                    ? null
+                    : () async {
+                        final success = await BrowserSessionDialog.show(
+                          context,
+                          runId: widget.runId,
+                          loginUrl: _authLoginUrlController.text.isNotEmpty
+                              ? _authLoginUrlController.text
+                              : null,
+                        );
+                        if (success && mounted) {
+                          await _waitForRecrawl();
+                        }
+                      },
+                icon: const Icon(Icons.open_in_browser, size: 18),
+                label: Text(
+                  AppLocalizations.of(context).interactiveLogin,
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.accentPrimary,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                 ),
               ),
             ),
-          ),
+          ] else ...[
+            // Credentials tab
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: AppColors.accentSecondary.withValues(alpha: 0.06),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(Icons.info_outline, size: 16, color: AppColors.accentSecondary.withValues(alpha: 0.7)),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      AppLocalizations.of(context).credentialsPrivacy,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                        height: 1.4,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 14),
 
-          // Auth status feedback
+            // Login URL field
+            Text(
+              AppLocalizations.of(context).loginUrl,
+              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary),
+            ),
+            const SizedBox(height: 6),
+            TextField(
+              controller: _authLoginUrlController,
+              enabled: !_isAuthCrawling,
+              decoration: _authInputDecoration(context, isDark: isDark, hintText: 'https://example.com/login', prefixIcon: Icons.link),
+              keyboardType: TextInputType.url,
+            ),
+            const SizedBox(height: 12),
+
+            // Email field
+            Text(
+              AppLocalizations.of(context).emailOrUsername,
+              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary),
+            ),
+            const SizedBox(height: 6),
+            TextField(
+              controller: _authEmailController,
+              enabled: !_isAuthCrawling,
+              decoration: _authInputDecoration(context, isDark: isDark, hintText: 'user@example.com', prefixIcon: Icons.person_outline),
+              keyboardType: TextInputType.emailAddress,
+            ),
+            const SizedBox(height: 12),
+
+            // Password field
+            Text(
+              AppLocalizations.of(context).password,
+              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary),
+            ),
+            const SizedBox(height: 6),
+            TextField(
+              controller: _authPasswordController,
+              enabled: !_isAuthCrawling,
+              obscureText: true,
+              decoration: _authInputDecoration(context, isDark: isDark, hintText: '\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022', prefixIcon: Icons.lock_outline),
+            ),
+            const SizedBox(height: 18),
+
+            // Authenticate button
+            SizedBox(
+              width: double.infinity,
+              height: 48,
+              child: ElevatedButton.icon(
+                onPressed: _isAuthCrawling ? null : _submitAuthCredentials,
+                icon: _isAuthCrawling
+                    ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(Colors.white)))
+                    : const Icon(Icons.lock_open, size: 18),
+                label: Text(
+                  _isAuthCrawling ? AppLocalizations.of(context).authenticating : AppLocalizations.of(context).authenticateRecapture,
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.accentSecondary,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+              ),
+            ),
+          ],
+
+          // Auth status feedback (shared)
           if (_currentAuthStatus.isNotEmpty) ...[
             const SizedBox(height: 16),
             _buildAuthStatusCard(context, isDark),
@@ -859,6 +925,43 @@ class _RunReviewScreenState extends State<RunReviewScreen> {
               ),
             ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildSegmentButton(BuildContext context, {required int index, required IconData icon, required String label, required bool isDark}) {
+    final isSelected = _authMode == index;
+    return Expanded(
+      child: GestureDetector(
+        onTap: _isAuthCrawling ? null : () => setState(() => _authMode = index),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          decoration: BoxDecoration(
+            color: isSelected
+                ? (isDark ? AppColors.accentPrimary.withValues(alpha: 0.2) : AppColors.accentPrimary.withValues(alpha: 0.1))
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(8),
+            border: isSelected
+                ? Border.all(color: AppColors.accentPrimary.withValues(alpha: 0.4))
+                : null,
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 16, color: isSelected ? AppColors.accentPrimary : (isDark ? AppColors.darkTextMuted : AppColors.lightTextMuted)),
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                  color: isSelected ? AppColors.accentPrimary : (isDark ? AppColors.darkTextMuted : AppColors.lightTextMuted),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -921,7 +1024,7 @@ class _RunReviewScreenState extends State<RunReviewScreen> {
                   ),
                 ),
               ),
-              if (_currentAuthStatus == 'authenticating' || _currentAuthStatus == 'logged_in' && _isAuthCrawling)
+              if (_currentAuthStatus == 'authenticating' || _currentAuthStatus == 'logging_in' || _currentAuthStatus == 'logged_in' && _isAuthCrawling)
                 SizedBox(
                   width: 16,
                   height: 16,

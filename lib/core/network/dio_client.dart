@@ -51,11 +51,13 @@ class DioClient {
         handler.next(options);
       },
       onError: (error, handler) async {
-        if (error.response?.statusCode == 401) {
+        if (error.response?.statusCode == 401 &&
+            error.requestOptions.extra['_retried'] != true) {
           final refreshed = await _tryRefreshToken();
           if (refreshed) {
             final token = await _storage.getAccessToken();
             error.requestOptions.headers['Authorization'] = 'Bearer $token';
+            error.requestOptions.extra['_retried'] = true;
             try {
               final response = await _dio.fetch(error.requestOptions);
               return handler.resolve(response);
