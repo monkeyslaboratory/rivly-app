@@ -15,6 +15,8 @@ import 'presentation/screens/auth/auth_screen.dart';
 import 'presentation/screens/dashboard/dashboard_screen.dart';
 import 'presentation/screens/insights/insights_screen.dart';
 import 'presentation/screens/jobs/jobs_screen.dart';
+import 'presentation/screens/competitors/competitor_detail_screen.dart';
+import 'presentation/screens/competitors/feature_matrix_screen.dart';
 import 'presentation/screens/reports/report_detail_screen.dart';
 import 'presentation/screens/settings/settings_screen.dart';
 import 'presentation/screens/run_progress/run_progress_screen.dart';
@@ -118,6 +120,17 @@ class _RivlyAppState extends State<RivlyApp> {
               builder: (context, state) {
                 final runId = state.pathParameters['id']!;
                 return ReportDetailScreen(runId: runId);
+              },
+            ),
+            GoRoute(
+              path: '/feature-matrix',
+              builder: (_, __) => const FeatureMatrixScreen(),
+            ),
+            GoRoute(
+              path: '/competitors/:id',
+              builder: (context, state) {
+                final id = state.pathParameters['id']!;
+                return CompetitorDetailScreen(competitorId: id);
               },
             ),
           ],

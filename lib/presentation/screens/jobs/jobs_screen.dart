@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import '../../../core/l10n/app_localizations.dart';
-import '../../../core/theme/colors.dart';
+import '../../../core/theme/tokens/colors.dart';
 import '../../../logic/dashboard/dashboard_cubit.dart';
 import '../../../logic/dashboard/dashboard_state.dart';
 import '../../widgets/common/loading_shimmer.dart';
@@ -39,6 +39,8 @@ class _JobsScreenState extends State<JobsScreen> {
 
   void _confirmDelete(BuildContext context, String jobId, String jobName) {
     final l = AppLocalizations.of(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final c = isDark ? PulseColors.dark : PulseColors.light;
 
     showDialog(
       context: context,
@@ -55,7 +57,7 @@ class _JobsScreenState extends State<JobsScreen> {
               Navigator.pop(ctx);
               context.read<DashboardCubit>().deleteJob(jobId);
             },
-            style: TextButton.styleFrom(foregroundColor: AppColors.error),
+            style: TextButton.styleFrom(foregroundColor: c.danger),
             child: Text(l.delete),
           ),
         ],
@@ -82,11 +84,8 @@ class _JobsScreenState extends State<JobsScreen> {
 
   Widget _buildJobsList(BuildContext context, DashboardState state) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final c = isDark ? PulseColors.dark : PulseColors.light;
     final l = AppLocalizations.of(context);
-    final textPrimary =
-        isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary;
-    final textMuted =
-        isDark ? AppColors.darkTextMuted : AppColors.lightTextMuted;
 
     return RefreshIndicator(
       onRefresh: () => context.read<DashboardCubit>().loadDashboard(),
@@ -102,11 +101,11 @@ class _JobsScreenState extends State<JobsScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      l.jobs,
-                      style: GoogleFonts.inter(
+                      l.competitorsNav,
+                      style: GoogleFonts.plusJakartaSans(
                         fontSize: 20,
                         fontWeight: FontWeight.w600,
-                        color: textPrimary,
+                        color: c.textPrimary,
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -115,7 +114,7 @@ class _JobsScreenState extends State<JobsScreen> {
                       style: GoogleFonts.inter(
                         fontSize: 14,
                         fontWeight: FontWeight.w400,
-                        color: textMuted,
+                        color: c.textSecondary,
                       ),
                     ),
                   ],
@@ -123,37 +122,29 @@ class _JobsScreenState extends State<JobsScreen> {
               ),
               ScaleButton(
                 onPressed: _openCreateModal,
-                child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                child: DecoratedBox(
                   decoration: BoxDecoration(
-                    color: isDark
-                        ? AppColors.darkTextPrimary
-                        : AppColors.lightTextPrimary,
+                    color: c.accent,
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.add,
-                        size: 18,
-                        color: isDark
-                            ? AppColors.darkBg
-                            : AppColors.lightBgElevated,
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        l.newJob,
-                        style: GoogleFonts.inter(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                          color: isDark
-                              ? AppColors.darkBg
-                              : AppColors.lightBgElevated,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 10),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.add, size: 18, color: Colors.white),
+                        const SizedBox(width: 6),
+                        Text(
+                          l.newJob,
+                          style: GoogleFonts.inter(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.white,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -171,7 +162,7 @@ class _JobsScreenState extends State<JobsScreen> {
                   competitorCount: job.competitors.length,
                   scheduleFrequency: job.scheduleFrequency,
                   createdAt: job.createdAt,
-                  isDark: isDark,
+                  colors: c,
                   onRun: () =>
                       context.read<DashboardCubit>().triggerRun(job.id),
                   onDelete: () =>
@@ -186,11 +177,8 @@ class _JobsScreenState extends State<JobsScreen> {
 
   Widget _buildEmptyState(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final c = isDark ? PulseColors.dark : PulseColors.light;
     final l = AppLocalizations.of(context);
-    final textPrimary =
-        isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary;
-    final textMuted =
-        isDark ? AppColors.darkTextMuted : AppColors.lightTextMuted;
 
     return Center(
       child: SingleChildScrollView(
@@ -198,30 +186,28 @@ class _JobsScreenState extends State<JobsScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Container(
-              width: 80,
-              height: 80,
+            DecoratedBox(
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: isDark
-                    ? AppColors.darkBgSubtle
-                    : AppColors.lightBorder,
+                color: c.surface2,
               ),
-              child: Icon(
-                Icons.work_outline,
-                size: 36,
-                color: isDark
-                    ? AppColors.darkTextMuted
-                    : AppColors.lightTextMuted,
+              child: SizedBox(
+                width: 80,
+                height: 80,
+                child: Icon(
+                  Icons.work_outline,
+                  size: 36,
+                  color: c.textTertiary,
+                ),
               ),
             ),
             const SizedBox(height: 24),
             Text(
               l.noJobsYet,
-              style: GoogleFonts.inter(
+              style: GoogleFonts.plusJakartaSans(
                 fontSize: 20,
                 fontWeight: FontWeight.w600,
-                color: textPrimary,
+                color: c.textPrimary,
               ),
             ),
             const SizedBox(height: 8),
@@ -230,44 +216,36 @@ class _JobsScreenState extends State<JobsScreen> {
               style: GoogleFonts.inter(
                 fontSize: 14,
                 fontWeight: FontWeight.w400,
-                color: textMuted,
+                color: c.textSecondary,
               ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 24),
             ScaleButton(
               onPressed: _openCreateModal,
-              child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+              child: DecoratedBox(
                 decoration: BoxDecoration(
-                  color: isDark
-                      ? AppColors.darkTextPrimary
-                      : AppColors.lightTextPrimary,
+                  color: c.accent,
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.add,
-                      size: 18,
-                      color: isDark
-                          ? AppColors.darkBg
-                          : AppColors.lightBgElevated,
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      l.createFirstJobButton,
-                      style: GoogleFonts.inter(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                        color: isDark
-                            ? AppColors.darkBg
-                            : AppColors.lightBgElevated,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 24, vertical: 14),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.add, size: 18, color: Colors.white),
+                      const SizedBox(width: 6),
+                      Text(
+                        l.createFirstJobButton,
+                        style: GoogleFonts.inter(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.white,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -288,7 +266,7 @@ class _JobCard extends StatefulWidget {
   final int competitorCount;
   final String scheduleFrequency;
   final DateTime createdAt;
-  final bool isDark;
+  final PulseColors colors;
   final VoidCallback onRun;
   final VoidCallback onDelete;
   final VoidCallback? onTap;
@@ -300,7 +278,7 @@ class _JobCard extends StatefulWidget {
     required this.competitorCount,
     required this.scheduleFrequency,
     required this.createdAt,
-    required this.isDark,
+    required this.colors,
     required this.onRun,
     required this.onDelete,
     this.onTap,
@@ -316,18 +294,7 @@ class _JobCardState extends State<_JobCard> {
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
-    final borderColor =
-        widget.isDark ? AppColors.darkBorder : AppColors.lightBorder;
-    final bgColor =
-        widget.isDark ? AppColors.darkBgElevated : AppColors.lightBgElevated;
-    final hoverBg = widget.isDark
-        ? AppColors.darkBgSubtle.withValues(alpha: 0.5)
-        : AppColors.lightBgSubtle;
-    final textPrimary = widget.isDark
-        ? AppColors.darkTextPrimary
-        : AppColors.lightTextPrimary;
-    final textMuted =
-        widget.isDark ? AppColors.darkTextMuted : AppColors.lightTextMuted;
+    final c = widget.colors;
 
     return MouseRegion(
       cursor: SystemMouseCursors.click,
@@ -339,18 +306,9 @@ class _JobCardState extends State<_JobCard> {
           duration: const Duration(milliseconds: 150),
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: _isHovered ? hoverBg : bgColor,
+            color: _isHovered ? c.surface2 : c.surface1,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: borderColor, width: 1),
-            boxShadow: !widget.isDark
-                ? [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.05),
-                      blurRadius: 2,
-                      offset: const Offset(0, 1),
-                    ),
-                  ]
-                : null,
+            border: Border.all(color: c.borderDefault, width: 1),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -364,14 +322,14 @@ class _JobCardState extends State<_JobCard> {
                       style: GoogleFonts.inter(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
-                        color: textPrimary,
+                        color: c.textPrimary,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
                   const SizedBox(width: 12),
-                  _StatusChip(status: widget.status),
+                  _StatusChip(status: widget.status, colors: c),
                 ],
               ),
               const SizedBox(height: 8),
@@ -379,10 +337,10 @@ class _JobCardState extends State<_JobCard> {
               // Product URL
               Text(
                 widget.productUrl,
-                style: GoogleFonts.inter(
+                style: GoogleFonts.jetBrainsMono(
                   fontSize: 13,
                   fontWeight: FontWeight.w400,
-                  color: AppColors.accentSecondary,
+                  color: c.textTertiary,
                 ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
@@ -392,25 +350,26 @@ class _JobCardState extends State<_JobCard> {
               // Meta row
               Row(
                 children: [
-                  Icon(Icons.people_outline, size: 14, color: textMuted),
+                  Icon(Icons.people_outline, size: 14, color: c.textTertiary),
                   const SizedBox(width: 4),
                   Text(
                     l.competitorsCount(widget.competitorCount),
                     style: GoogleFonts.inter(
                       fontSize: 12,
                       fontWeight: FontWeight.w400,
-                      color: textMuted,
+                      color: c.textTertiary,
                     ),
                   ),
                   const SizedBox(width: 16),
-                  Icon(Icons.schedule_outlined, size: 14, color: textMuted),
+                  Icon(Icons.schedule_outlined,
+                      size: 14, color: c.textTertiary),
                   const SizedBox(width: 4),
                   Text(
                     widget.scheduleFrequency,
                     style: GoogleFonts.inter(
                       fontSize: 12,
                       fontWeight: FontWeight.w400,
-                      color: textMuted,
+                      color: c.textTertiary,
                     ),
                   ),
                   const Spacer(),
@@ -419,7 +378,7 @@ class _JobCardState extends State<_JobCard> {
                     style: GoogleFonts.inter(
                       fontSize: 12,
                       fontWeight: FontWeight.w400,
-                      color: textMuted,
+                      color: c.textTertiary,
                     ),
                   ),
                 ],
@@ -431,45 +390,38 @@ class _JobCardState extends State<_JobCard> {
                 children: [
                   ScaleButton(
                     onPressed: widget.onRun,
-                    child: Container(
-                      height: 36,
-                      padding: const EdgeInsets.symmetric(horizontal: 14),
+                    child: DecoratedBox(
                       decoration: BoxDecoration(
-                        color: widget.isDark
-                            ? AppColors.darkTextPrimary
-                            : AppColors.lightTextPrimary,
+                        color: c.accent,
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.play_arrow,
-                            size: 16,
-                            color: widget.isDark
-                                ? AppColors.darkBg
-                                : AppColors.lightBgElevated,
+                      child: SizedBox(
+                        height: 36,
+                        child: Padding(
+                          padding:
+                              const EdgeInsets.symmetric(horizontal: 14),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.play_arrow,
+                                  size: 16, color: Colors.white),
+                              const SizedBox(width: 4),
+                              Text(
+                                l.run,
+                                style: GoogleFonts.inter(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ],
                           ),
-                          const SizedBox(width: 4),
-                          Text(
-                            l.run,
-                            style: GoogleFonts.inter(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w500,
-                              color: widget.isDark
-                                  ? AppColors.darkBg
-                                  : AppColors.lightBgElevated,
-                            ),
-                          ),
-                        ],
+                        ),
                       ),
                     ),
                   ),
                   const SizedBox(width: 8),
-                  _DeleteButton(
-                    isDark: widget.isDark,
-                    onTap: widget.onDelete,
-                  ),
+                  _DeleteButton(colors: c, onTap: widget.onDelete),
                 ],
               ),
             ],
@@ -484,10 +436,10 @@ class _JobCardState extends State<_JobCard> {
 // Delete Button with hover-to-red
 // ---------------------------------------------------------------------------
 class _DeleteButton extends StatefulWidget {
-  final bool isDark;
+  final PulseColors colors;
   final VoidCallback onTap;
 
-  const _DeleteButton({required this.isDark, required this.onTap});
+  const _DeleteButton({required this.colors, required this.onTap});
 
   @override
   State<_DeleteButton> createState() => _DeleteButtonState();
@@ -499,9 +451,8 @@ class _DeleteButtonState extends State<_DeleteButton> {
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
-    final mutedColor =
-        widget.isDark ? AppColors.darkTextMuted : AppColors.lightTextMuted;
-    final color = _isHovered ? AppColors.error : mutedColor;
+    final c = widget.colors;
+    final color = _isHovered ? c.danger : c.textTertiary;
 
     return MouseRegion(
       cursor: SystemMouseCursors.click,
@@ -515,15 +466,13 @@ class _DeleteButtonState extends State<_DeleteButton> {
           padding: const EdgeInsets.symmetric(horizontal: 12),
           decoration: BoxDecoration(
             color: _isHovered
-                ? AppColors.error.withValues(alpha: 0.08)
+                ? c.danger.withValues(alpha: 0.08)
                 : Colors.transparent,
             borderRadius: BorderRadius.circular(8),
             border: Border.all(
               color: _isHovered
-                  ? AppColors.error.withValues(alpha: 0.3)
-                  : (widget.isDark
-                      ? AppColors.darkBorder
-                      : AppColors.lightBorder),
+                  ? c.danger.withValues(alpha: 0.3)
+                  : c.borderDefault,
             ),
           ),
           child: Row(
@@ -548,55 +497,59 @@ class _DeleteButtonState extends State<_DeleteButton> {
 }
 
 // ---------------------------------------------------------------------------
-// Status Chip — colored dot, no orange for active status
+// Status Chip
 // ---------------------------------------------------------------------------
 class _StatusChip extends StatelessWidget {
   final String status;
-  const _StatusChip({required this.status});
+  final PulseColors colors;
+
+  const _StatusChip({required this.status, required this.colors});
 
   @override
   Widget build(BuildContext context) {
+    final c = colors;
     Color color;
     switch (status) {
       case 'active':
-        color = AppColors.success;
+        color = c.success;
       case 'running':
-        color = AppColors.accentSecondary;
+        color = c.info;
       case 'error':
       case 'failed':
-        color = AppColors.error;
+        color = c.danger;
       default:
-        color = AppColors.warning;
+        color = c.warning;
     }
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+    return DecoratedBox(
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(20),
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 6,
-            height: 6,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: color,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            DecoratedBox(
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: color,
+              ),
+              child: const SizedBox(width: 6, height: 6),
             ),
-          ),
-          const SizedBox(width: 6),
-          Text(
-            status.toUpperCase(),
-            style: GoogleFonts.inter(
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-              color: color,
-              letterSpacing: 0.5,
+            const SizedBox(width: 6),
+            Text(
+              status.toUpperCase(),
+              style: GoogleFonts.inter(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: color,
+                letterSpacing: 0.5,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

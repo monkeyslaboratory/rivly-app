@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../../core/l10n/app_localizations.dart';
-import '../../../core/theme/colors.dart';
+import '../../../core/theme/tokens/colors.dart';
 import '../../../logic/insights/insights_cubit.dart';
 import '../../../logic/insights/insights_state.dart';
 import '../../widgets/common/loading_shimmer.dart';
@@ -28,13 +28,10 @@ class _InsightsBody extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final textPrimary =
-        isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary;
-    final textMuted =
-        isDark ? AppColors.darkTextMuted : AppColors.lightTextMuted;
+    final c = isDark ? PulseColors.dark : PulseColors.light;
 
     return Scaffold(
-      backgroundColor: isDark ? AppColors.darkBg : AppColors.lightBg,
+      backgroundColor: c.surface0,
       body: BlocBuilder<InsightsCubit, InsightsState>(
         builder: (context, state) {
           if (state.isLoading) {
@@ -42,16 +39,14 @@ class _InsightsBody extends StatelessWidget {
           }
 
           if (state.error != null) {
-            return _buildError(
-                context, state.error!, l10n, textPrimary, textMuted);
+            return _buildError(context, state.error!, l10n, c);
           }
 
           if (state.insights.isEmpty) {
-            return _buildEmpty(context, l10n, isDark, textPrimary, textMuted);
+            return _buildEmpty(context, l10n, c);
           }
 
-          return _buildInsightsList(
-              context, state, l10n, isDark, textPrimary, textMuted);
+          return _buildInsightsList(context, state, l10n, c);
         },
       ),
     );
@@ -83,28 +78,27 @@ class _InsightsBody extends StatelessWidget {
     BuildContext context,
     String error,
     AppLocalizations l10n,
-    Color textPrimary,
-    Color textMuted,
+    PulseColors c,
   ) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              width: 48,
-              height: 48,
+            DecoratedBox(
               decoration: BoxDecoration(
-                color: AppColors.error.withValues(alpha: 0.1),
+                color: c.danger.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
-                Icons.error_outline_rounded,
-                size: 24,
-                color: AppColors.error,
+              child: SizedBox(
+                width: 48,
+                height: 48,
+                child: Icon(
+                  Icons.error_outline_rounded,
+                  size: 24,
+                  color: c.danger,
+                ),
               ),
             ),
             const SizedBox(height: 16),
@@ -113,7 +107,7 @@ class _InsightsBody extends StatelessWidget {
               style: GoogleFonts.inter(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
-                color: textPrimary,
+                color: c.textPrimary,
               ),
             ),
             const SizedBox(height: 8),
@@ -122,7 +116,7 @@ class _InsightsBody extends StatelessWidget {
               style: GoogleFonts.inter(
                 fontSize: 13,
                 fontWeight: FontWeight.w400,
-                color: textMuted,
+                color: c.textSecondary,
               ),
               textAlign: TextAlign.center,
             ),
@@ -130,31 +124,30 @@ class _InsightsBody extends StatelessWidget {
             ScaleButton(
               onPressed: () =>
                   context.read<InsightsCubit>().loadInsights(),
-              child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              child: DecoratedBox(
                 decoration: BoxDecoration(
-                  border: Border.all(
-                    color: isDark
-                        ? AppColors.darkBorder
-                        : AppColors.lightBorder,
-                  ),
+                  border: Border.all(color: c.borderDefault),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.refresh_rounded, size: 18, color: textPrimary),
-                    const SizedBox(width: 6),
-                    Text(
-                      l10n.retry,
-                      style: GoogleFonts.inter(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                        color: textPrimary,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 16, vertical: 10),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.refresh_rounded,
+                          size: 18, color: c.textPrimary),
+                      const SizedBox(width: 6),
+                      Text(
+                        l10n.retry,
+                        style: GoogleFonts.inter(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: c.textPrimary,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -167,9 +160,7 @@ class _InsightsBody extends StatelessWidget {
   Widget _buildEmpty(
     BuildContext context,
     AppLocalizations l10n,
-    bool isDark,
-    Color textPrimary,
-    Color textMuted,
+    PulseColors c,
   ) {
     return Center(
       child: Padding(
@@ -177,30 +168,28 @@ class _InsightsBody extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              width: 80,
-              height: 80,
+            DecoratedBox(
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: isDark
-                    ? AppColors.darkBgSubtle
-                    : AppColors.lightBorder,
+                color: c.surface2,
               ),
-              child: Icon(
-                Icons.lightbulb_outline_rounded,
-                size: 36,
-                color: isDark
-                    ? AppColors.darkTextMuted
-                    : AppColors.lightTextMuted,
+              child: SizedBox(
+                width: 80,
+                height: 80,
+                child: Icon(
+                  Icons.lightbulb_outline_rounded,
+                  size: 36,
+                  color: c.textTertiary,
+                ),
               ),
             ),
             const SizedBox(height: 24),
             Text(
               l10n.noInsightsYet,
-              style: GoogleFonts.inter(
+              style: GoogleFonts.plusJakartaSans(
                 fontSize: 20,
                 fontWeight: FontWeight.w600,
-                color: textPrimary,
+                color: c.textPrimary,
               ),
             ),
             const SizedBox(height: 8),
@@ -209,44 +198,37 @@ class _InsightsBody extends StatelessWidget {
               style: GoogleFonts.inter(
                 fontSize: 14,
                 fontWeight: FontWeight.w400,
-                color: textMuted,
+                color: c.textSecondary,
               ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 28),
             ScaleButton(
               onPressed: () => context.go('/jobs'),
-              child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+              child: DecoratedBox(
                 decoration: BoxDecoration(
-                  color: isDark
-                      ? AppColors.darkTextPrimary
-                      : AppColors.lightTextPrimary,
+                  color: c.accent,
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.play_arrow_rounded,
-                      size: 20,
-                      color: isDark
-                          ? AppColors.darkBg
-                          : AppColors.lightBgElevated,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      l10n.viewAllJobs,
-                      style: GoogleFonts.inter(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: isDark
-                            ? AppColors.darkBg
-                            : AppColors.lightBgElevated,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 24, vertical: 14),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.play_arrow_rounded,
+                          size: 20, color: Colors.white),
+                      const SizedBox(width: 8),
+                      Text(
+                        l10n.viewAllJobs,
+                        style: GoogleFonts.inter(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -260,9 +242,7 @@ class _InsightsBody extends StatelessWidget {
     BuildContext context,
     InsightsState state,
     AppLocalizations l10n,
-    bool isDark,
-    Color textPrimary,
-    Color textMuted,
+    PulseColors c,
   ) {
     // Group by impact level
     final groups = <String, List<AggregatedInsight>>{
@@ -288,10 +268,10 @@ class _InsightsBody extends StatelessWidget {
           // Page title
           Text(
             l10n.insights,
-            style: GoogleFonts.inter(
+            style: GoogleFonts.plusJakartaSans(
               fontSize: 20,
               fontWeight: FontWeight.w600,
-              color: textPrimary,
+              color: c.textPrimary,
             ),
           ),
           const SizedBox(height: 4),
@@ -300,7 +280,7 @@ class _InsightsBody extends StatelessWidget {
             style: GoogleFonts.inter(
               fontSize: 14,
               fontWeight: FontWeight.w400,
-              color: textMuted,
+              color: c.textSecondary,
             ),
           ),
           const SizedBox(height: 28),
@@ -311,7 +291,7 @@ class _InsightsBody extends StatelessWidget {
               impact: entry.key,
               count: entry.value.length,
               l10n: l10n,
-              isDark: isDark,
+              colors: c,
             ),
             const SizedBox(height: 12),
             ...entry.value.map((insight) => Padding(
@@ -319,7 +299,7 @@ class _InsightsBody extends StatelessWidget {
                   child: _InsightCard(
                     insight: insight,
                     l10n: l10n,
-                    isDark: isDark,
+                    colors: c,
                   ),
                 )),
             const SizedBox(height: 16),
@@ -336,31 +316,26 @@ class _ImpactGroupHeader extends StatelessWidget {
   final String impact;
   final int count;
   final AppLocalizations l10n;
-  final bool isDark;
+  final PulseColors colors;
 
   const _ImpactGroupHeader({
     required this.impact,
     required this.count,
     required this.l10n,
-    required this.isDark,
+    required this.colors,
   });
 
   @override
   Widget build(BuildContext context) {
-    final color = _impactColor(impact);
+    final c = colors;
+    final color = _impactColor(impact, c);
     final label = _impactLabel(impact, l10n);
-    final textPrimary =
-        isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary;
 
     return Row(
       children: [
-        Container(
-          width: 8,
-          height: 8,
-          decoration: BoxDecoration(
-            color: color,
-            shape: BoxShape.circle,
-          ),
+        DecoratedBox(
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+          child: const SizedBox(width: 8, height: 8),
         ),
         const SizedBox(width: 10),
         Text(
@@ -368,22 +343,24 @@ class _ImpactGroupHeader extends StatelessWidget {
           style: GoogleFonts.inter(
             fontSize: 14,
             fontWeight: FontWeight.w600,
-            color: textPrimary,
+            color: c.textPrimary,
           ),
         ),
         const SizedBox(width: 8),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+        DecoratedBox(
           decoration: BoxDecoration(
             color: color.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(10),
           ),
-          child: Text(
-            '$count',
-            style: GoogleFonts.inter(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: color,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+            child: Text(
+              '$count',
+              style: GoogleFonts.inter(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: color,
+              ),
             ),
           ),
         ),
@@ -397,12 +374,12 @@ class _ImpactGroupHeader extends StatelessWidget {
 class _InsightCard extends StatefulWidget {
   final AggregatedInsight insight;
   final AppLocalizations l10n;
-  final bool isDark;
+  final PulseColors colors;
 
   const _InsightCard({
     required this.insight,
     required this.l10n,
-    required this.isDark,
+    required this.colors,
   });
 
   @override
@@ -414,24 +391,8 @@ class _InsightCardState extends State<_InsightCard> {
 
   @override
   Widget build(BuildContext context) {
-    final surfaceBg = widget.isDark
-        ? AppColors.darkBgElevated
-        : AppColors.lightBgElevated;
-    final hoverBg = widget.isDark
-        ? AppColors.darkBgSubtle.withValues(alpha: 0.5)
-        : AppColors.lightBgSubtle;
-    final borderColor =
-        widget.isDark ? AppColors.darkBorder : AppColors.lightBorder;
-    final textPrimary = widget.isDark
-        ? AppColors.darkTextPrimary
-        : AppColors.lightTextPrimary;
-    final textMuted =
-        widget.isDark ? AppColors.darkTextMuted : AppColors.lightTextMuted;
-    final textSecondary = widget.isDark
-        ? AppColors.darkTextSecondary
-        : AppColors.lightTextSecondary;
-
-    final impactColor = _impactColor(widget.insight.impact);
+    final c = widget.colors;
+    final impactColor = _impactColor(widget.insight.impact, c);
     final impactLabel = _impactLabel(widget.insight.impact, widget.l10n);
 
     return MouseRegion(
@@ -441,18 +402,9 @@ class _InsightCardState extends State<_InsightCard> {
         duration: const Duration(milliseconds: 150),
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: _isHovered ? hoverBg : surfaceBg,
+          color: _isHovered ? c.surface2 : c.surface1,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: borderColor, width: 1),
-          boxShadow: !widget.isDark
-              ? [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.05),
-                    blurRadius: 2,
-                    offset: const Offset(0, 1),
-                  ),
-                ]
-              : null,
+          border: Border.all(color: c.borderDefault, width: 1),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -461,21 +413,21 @@ class _InsightCardState extends State<_InsightCard> {
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                DecoratedBox(
                   decoration: BoxDecoration(
-                    color: widget.isDark
-                        ? AppColors.darkBgSubtle
-                        : AppColors.lightBgSubtle,
+                    color: c.surface2,
                     borderRadius: BorderRadius.circular(6),
                   ),
-                  child: Text(
-                    '#${widget.insight.priority}',
-                    style: GoogleFonts.inter(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                      color: textSecondary,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 8, vertical: 3),
+                    child: Text(
+                      '#${widget.insight.priority}',
+                      style: GoogleFonts.inter(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: c.textSecondary,
+                      ),
                     ),
                   ),
                 ),
@@ -486,7 +438,7 @@ class _InsightCardState extends State<_InsightCard> {
                     style: GoogleFonts.inter(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
-                      color: textPrimary,
+                      color: c.textPrimary,
                     ),
                   ),
                 ),
@@ -501,7 +453,7 @@ class _InsightCardState extends State<_InsightCard> {
                 style: GoogleFonts.inter(
                   fontSize: 13,
                   fontWeight: FontWeight.w400,
-                  color: textMuted,
+                  color: c.textSecondary,
                   height: 1.5,
                 ),
                 maxLines: 3,
@@ -521,13 +473,13 @@ class _InsightCardState extends State<_InsightCard> {
                 _Chip(
                   label: '${widget.l10n.impact}: $impactLabel',
                   color: impactColor,
-                  isDark: widget.isDark,
+                  colors: c,
                 ),
                 // Effort chip
                 _Chip(
                   label: '${widget.l10n.effort}: ${widget.insight.effort}',
-                  color: textSecondary,
-                  isDark: widget.isDark,
+                  color: c.textSecondary,
+                  colors: c,
                   outlined: true,
                 ),
                 // Source label
@@ -536,7 +488,7 @@ class _InsightCardState extends State<_InsightCard> {
                   style: GoogleFonts.inter(
                     fontSize: 11,
                     fontWeight: FontWeight.w400,
-                    color: textMuted,
+                    color: c.textTertiary,
                   ),
                 ),
               ],
@@ -553,36 +505,36 @@ class _InsightCardState extends State<_InsightCard> {
 class _Chip extends StatelessWidget {
   final String label;
   final Color color;
-  final bool isDark;
+  final PulseColors colors;
   final bool outlined;
 
   const _Chip({
     required this.label,
     required this.color,
-    required this.isDark,
+    required this.colors,
     this.outlined = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+    final c = colors;
+    return DecoratedBox(
       decoration: BoxDecoration(
         color: outlined ? Colors.transparent : color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(6),
         border: outlined
-            ? Border.all(
-                color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
-                width: 1,
-              )
+            ? Border.all(color: c.borderDefault, width: 1)
             : null,
       ),
-      child: Text(
-        label,
-        style: GoogleFonts.inter(
-          fontSize: 11,
-          fontWeight: FontWeight.w600,
-          color: color,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        child: Text(
+          label,
+          style: GoogleFonts.inter(
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+            color: color,
+          ),
         ),
       ),
     );
@@ -591,18 +543,18 @@ class _Chip extends StatelessWidget {
 
 // -- Helpers --
 
-Color _impactColor(String impact) {
+Color _impactColor(String impact, PulseColors c) {
   switch (impact.toLowerCase()) {
     case 'critical':
-      return AppColors.error;
+      return c.danger;
     case 'high':
-      return AppColors.accentHot;
+      return c.warning;
     case 'medium':
-      return AppColors.warning;
+      return c.info;
     case 'low':
-      return AppColors.accentSecondary;
+      return c.textTertiary;
     default:
-      return AppColors.warning;
+      return c.warning;
   }
 }
 

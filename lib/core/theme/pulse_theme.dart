@@ -5,22 +5,22 @@ import 'tokens/colors.dart';
 import 'tokens/radii.dart';
 import 'tokens/typography.dart';
 
-/// Pulse Design System — ThemeData builder.
+/// Pulse Design System — ThemeData builder (dark-first).
 ///
 /// Provides [light] and [dark] theme constructors that map Pulse tokens onto
 /// Material's [ThemeData]. Screens should prefer using Pulse tokens directly
-/// (e.g. `PulseColors.light.accent`) for any value not covered by the Material
+/// (e.g. `PulseColors.dark.accent`) for any value not covered by the Material
 /// theme, but standard Material widgets will automatically pick up the correct
 /// colors, typography and shapes.
 class PulseTheme {
   PulseTheme._();
 
-  // ── Public API ────────────────────────────────────────────────────────
+  // -- Public API --
 
   static ThemeData light() => _build(Brightness.light, PulseColors.light);
   static ThemeData dark() => _build(Brightness.dark, PulseColors.dark);
 
-  // ── Internal builder ──────────────────────────────────────────────────
+  // -- Internal builder --
 
   static ThemeData _build(Brightness brightness, PulseColors c) {
     final isLight = brightness == Brightness.light;
@@ -50,14 +50,14 @@ class PulseTheme {
       scaffoldBackgroundColor: c.surface0,
       textTheme: textTheme,
 
-      // ── Text selection ──────────────────────────────────────────────
+      // -- Text selection --
       textSelectionTheme: TextSelectionThemeData(
         cursorColor: c.accent,
         selectionColor: c.accent.withValues(alpha: 0.25),
         selectionHandleColor: c.accent,
       ),
 
-      // ── AppBar ──────────────────────────────────────────────────────
+      // -- AppBar --
       appBarTheme: AppBarTheme(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -67,7 +67,7 @@ class PulseTheme {
         iconTheme: IconThemeData(color: c.textPrimary),
       ),
 
-      // ── Card ────────────────────────────────────────────────────────
+      // -- Card --
       cardTheme: CardThemeData(
         color: c.surface1,
         elevation: 0,
@@ -77,7 +77,7 @@ class PulseTheme {
         ),
       ),
 
-      // ── Input ───────────────────────────────────────────────────────
+      // -- Input --
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: c.surface1,
@@ -103,7 +103,7 @@ class PulseTheme {
         labelStyle: GoogleFonts.inter(color: c.textSecondary, fontSize: 14),
       ),
 
-      // ── Elevated button (accent bg) ────────────────────────────────
+      // -- Elevated button (accent bg) --
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: c.accent,
@@ -120,7 +120,7 @@ class PulseTheme {
         ),
       ),
 
-      // ── Outlined button (border) ───────────────────────────────────
+      // -- Outlined button (border) --
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           foregroundColor: c.textPrimary,
@@ -136,7 +136,7 @@ class PulseTheme {
         ),
       ),
 
-      // ── Text button (ghost) ────────────────────────────────────────
+      // -- Text button (ghost) --
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           foregroundColor: c.textSecondary,
@@ -147,20 +147,20 @@ class PulseTheme {
         ),
       ),
 
-      // ── Divider ────────────────────────────────────────────────────
+      // -- Divider --
       dividerTheme: DividerThemeData(
         color: c.borderDefault,
         thickness: 1,
       ),
 
-      // ── Bottom nav ─────────────────────────────────────────────────
+      // -- Bottom nav --
       bottomNavigationBarTheme: BottomNavigationBarThemeData(
         backgroundColor: c.surface1,
         selectedItemColor: c.accent,
         unselectedItemColor: c.textTertiary,
       ),
 
-      // ── Snackbar ───────────────────────────────────────────────────
+      // -- Snackbar --
       snackBarTheme: SnackBarThemeData(
         backgroundColor: c.surface1,
         contentTextStyle: GoogleFonts.inter(color: c.textPrimary),
@@ -168,20 +168,43 @@ class PulseTheme {
         behavior: SnackBarBehavior.floating,
       ),
 
-      // ── Progress indicator ─────────────────────────────────────────
+      // -- Progress indicator --
       progressIndicatorTheme: ProgressIndicatorThemeData(
         color: c.accent,
       ),
 
-      // ── FAB ────────────────────────────────────────────────────────
+      // -- FAB --
       floatingActionButtonTheme: FloatingActionButtonThemeData(
         backgroundColor: c.accent,
         foregroundColor: Colors.white,
       ),
+
+      // -- Dialog --
+      dialogTheme: DialogThemeData(
+        backgroundColor: c.surface1,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(
+          borderRadius: PulseRadii.borderLg,
+        ),
+      ),
+
+      // -- Switch --
+      switchTheme: SwitchThemeData(
+        thumbColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) return c.accent;
+          return c.textTertiary;
+        }),
+        trackColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return c.accent.withValues(alpha: 0.3);
+          }
+          return c.surface2;
+        }),
+      ),
     );
   }
 
-  // ── Text theme mapping ──────────────────────────────────────────────
+  // -- Text theme mapping --
 
   static TextTheme _buildTextTheme(TextTheme base, PulseColors c) {
     return base.copyWith(

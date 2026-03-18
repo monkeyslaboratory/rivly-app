@@ -365,7 +365,10 @@ class AppLocalizations {
       _t('Re-capturing authenticated pages...', 'Перезахватываем авторизованные страницы...');
 
   // -- Sidebar --
+  String get overview => _t('Overview', 'Обзор');
   String get jobs => _t('Jobs', 'Задачи');
+  String get competitorsNav => _t('Competitors', 'Конкуренты');
+  String get reportsNav => _t('Reports', 'Отчёты');
   String get insights => _t('Insights', 'Инсайты');
 
   // -- Dashboard KPIs --
@@ -476,6 +479,38 @@ class AppLocalizations {
           'Создать первую задачу анализа');
   String competitorsCount(int n) =>
       _t('$n competitors', '$n конкурентов');
+
+  // -- Feature Matrix --
+  String get featureMatrixTitle => _t('Feature Matrix', 'Матрица фич');
+  String get pointOfParity => _t('Point of Parity', 'Точка паритета');
+  String get pointOfDifference => _t('Point of Difference', 'Точка отличия');
+  String get coverageLabel => _t('Coverage', 'Покрытие');
+  String get totalFeatures => _t('Total Features', 'Всего фич');
+  String get popCoverage => _t('PoP Coverage', 'Покрытие PoP');
+  String get ourAdvantages => _t('Our Advantages', 'Наши преимущества');
+  String get criticalGaps => _t('Critical Gaps', 'Критические пробелы');
+  String get marketPosition => _t('Market Position', 'Позиция на рынке');
+  String get topGaps => _t('Top Gaps', 'Основные пробелы');
+  String get widgetsSection => _t('Analytics', 'Аналитика');
+  String get viewAllInsights => _t('View all insights', 'Все инсайты');
+  String get competitorDetail => _t('Competitor Detail', 'Детали конкурента');
+  String get scoreBreakdownLabel => _t('Score Breakdown', 'Разбивка оценки');
+  String get recentActivityLabel => _t('Recent Activity', 'Последняя активность');
+  String get viewAll => _t('View all', 'Смотреть все');
+  String get noFeatureData => _t('No feature matrix data available yet. Complete an analysis to see feature comparisons.', 'Данные матрицы фич пока недоступны. Завершите анализ для сравнения.');
+  String get feature => _t('Feature', 'Фича');
+  String get ours => _t('Ours', 'Наше');
+  String get type => _t('Type', 'Тип');
+  String get present => _t('Present', 'Есть');
+  String get absent => _t('Absent', 'Нет');
+  String get partial => _t('Partial', 'Частично');
+  String get pop => _t('PoP', 'PoP');
+  String get pod => _t('PoD', 'PoD');
+  String get competitorNotFound => _t('Competitor not found', 'Конкурент не найден');
+  String get noReportData => _t('No report data available for this competitor.', 'Данные отчёта для этого конкурента недоступны.');
+  String get keyRecommendations => _t('Key Recommendations', 'Ключевые рекомендации');
+  String get reportSummary => _t('Report Summary', 'Резюме отчёта');
+  String get screenshotsSectionLabel => _t('Screenshots', 'Скриншоты');
 
   // -- Days --
   List<String> get weekDays => isRussian

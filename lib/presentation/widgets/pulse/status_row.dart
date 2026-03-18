@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-// TODO: Import from pulse_theme.dart / tokens when available
-// import 'package:rivly/core/theme/pulse_theme.dart';
+import '../../../core/theme/tokens/colors.dart';
 
 /// Access status for a competitor row.
 enum CompetitorAccessStatus {
@@ -47,31 +46,21 @@ class PulseStatusRow extends StatefulWidget {
 class _PulseStatusRowState extends State<PulseStatusRow> {
   bool _isHovered = false;
 
-  Color _dotColor() {
+  Color _dotColor(PulseColors c) {
     switch (widget.accessStatus) {
       case CompetitorAccessStatus.public_:
-        return const Color(0xFF22C55E); // green
+        return c.success;
       case CompetitorAccessStatus.authRequired:
-        return const Color(0xFFF59E0B); // amber
+        return c.warning;
       case CompetitorAccessStatus.blocked:
-        return const Color(0xFFEF4444); // red
+        return c.danger;
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    // TODO: Replace raw values with token references when available
-    final textPrimary =
-        isDark ? const Color(0xFFFAFAFA) : const Color(0xFF1A1A2E);
-    final textSecondary =
-        isDark ? const Color(0xFFA1A1AA) : const Color(0xFF6B7280);
-    final textMuted =
-        isDark ? const Color(0xFF71717A) : const Color(0xFF9CA3AF);
-    final hoverBg = isDark
-        ? const Color(0xFF27272A).withValues(alpha: 0.5)
-        : const Color(0xFFF8F9FA);
+    final c = isDark ? PulseColors.dark : PulseColors.light;
 
     return MouseRegion(
       cursor: widget.onTap != null
@@ -85,29 +74,29 @@ class _PulseStatusRowState extends State<PulseStatusRow> {
           duration: const Duration(milliseconds: 120),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           decoration: BoxDecoration(
-            color: _isHovered ? hoverBg : Colors.transparent,
+            color: _isHovered ? c.surface2 : Colors.transparent,
           ),
           child: Row(
             children: [
               // Favicon placeholder
-              Container(
+              SizedBox(
                 width: 28,
                 height: 28,
-                decoration: BoxDecoration(
-                  color: isDark
-                      ? const Color(0xFF27272A)
-                      : const Color(0xFFF4F4F5),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Center(
-                  child: Text(
-                    widget.name.isNotEmpty
-                        ? widget.name[0].toUpperCase()
-                        : '?',
-                    style: GoogleFonts.inter(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: textSecondary,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: c.surface2,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Center(
+                    child: Text(
+                      widget.name.isNotEmpty
+                          ? widget.name[0].toUpperCase()
+                          : '?',
+                      style: GoogleFonts.inter(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: c.textSecondary,
+                      ),
                     ),
                   ),
                 ),
@@ -124,7 +113,7 @@ class _PulseStatusRowState extends State<PulseStatusRow> {
                       style: GoogleFonts.inter(
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
-                        color: textPrimary,
+                        color: c.textPrimary,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -132,10 +121,10 @@ class _PulseStatusRowState extends State<PulseStatusRow> {
                     const SizedBox(height: 2),
                     Text(
                       _shortenUrl(widget.url),
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.jetBrainsMono(
                         fontSize: 12,
                         fontWeight: FontWeight.w400,
-                        color: textMuted,
+                        color: c.textTertiary,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -151,7 +140,7 @@ class _PulseStatusRowState extends State<PulseStatusRow> {
                 margin: const EdgeInsets.symmetric(horizontal: 8),
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: _dotColor(),
+                  color: _dotColor(c),
                 ),
               ),
 
@@ -164,7 +153,7 @@ class _PulseStatusRowState extends State<PulseStatusRow> {
                     style: GoogleFonts.inter(
                       fontSize: 12,
                       fontWeight: FontWeight.w400,
-                      color: textMuted,
+                      color: c.textTertiary,
                     ),
                   ),
                 ),
@@ -178,7 +167,7 @@ class _PulseStatusRowState extends State<PulseStatusRow> {
                   child: Icon(
                     widget.actionIcon ?? Icons.open_in_new,
                     size: 16,
-                    color: textMuted,
+                    color: c.textTertiary,
                   ),
                 ),
               ),

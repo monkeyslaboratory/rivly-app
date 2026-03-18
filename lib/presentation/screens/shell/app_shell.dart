@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../core/theme/tokens/colors.dart';
 import '../../../logic/sidebar/sidebar_cubit.dart';
 import '../../widgets/sidebar/app_sidebar.dart';
 
@@ -11,6 +12,9 @@ class AppShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final c = isDark ? PulseColors.dark : PulseColors.light;
+
     return LayoutBuilder(
       builder: (context, constraints) {
         // Auto-collapse sidebar when width < 900
@@ -20,6 +24,7 @@ class AppShell extends StatelessWidget {
         });
 
         return Scaffold(
+          backgroundColor: c.surface0,
           body: Row(
             children: [
               const AppSidebar(),
